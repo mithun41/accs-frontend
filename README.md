@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ACCS Marketplace — Frontend
 
-## Getting Started
+Next.js 16 (App Router) storefront, seller dashboard and admin console for the ACCS Django backend.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** + React 19 (client components, App Router)
+- **Tailwind CSS v4** — design tokens live in `src/app/globals.css` (`brand-*` colours, `.btn`, `.input`, `.card`, `.table`)
+- **Zustand** — auth session (`src/store/auth.js`, persisted) and cart (`src/store/cart.js`)
+- **Axios** — `src/lib/api.js` attaches the Bearer token + `x-guest-id` header and refreshes expired tokens automatically
+- **lucide-react** icons, **sonner** toasts
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The backend must be running (`python manage.py runserver` in the `ACCS` project). Seed demo data there with
+`python manage.py seed_demo`.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+| Role   | Phone         | Password   | Where to sign in |
+| ------ | ------------- | ---------- | ---------------- |
+| Admin  | `01700000001` | `12345678` | `/admin/login`   |
+| Buyer  | `01711111111` | `12345678` | `/login`         |
+| Vendor | `01722222222` | `12345678` | `/login`         |
+| Vendor | `01733333333` | `12345678` | `/login`         |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without SMS credentials the backend prints OTP codes to its console (`[OTP DISPATCH]`).
 
-## Learn More
+## Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/
+    (shop)/        storefront: home, products, shops, cart, checkout, account/*, about, policies
+    (auth)/        login, register (buyer OTP), register/vendor (KYC), forgot-password
+    vendor/        seller dashboard: overview, products, orders, wallet, reviews, shop profile
+    admin/         admin console: analytics, orders, products, categories, shops, users & KYC,
+                   staff & roles, wallets, commissions, announcements, settings
+  components/      ui/ primitives, layout/ shells & guards, product/, orders/, vendor/, address/, auth/
+  hooks/           useSession, useFetch
+  lib/             api client, services (every endpoint), utils, order helpers
+  store/           zustand stores
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Main flows
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Buyer** — browse → add to cart (works as guest) → sign in / OTP sign-up → cart merges → checkout with Pathao
+   city/zone/area and live delivery quote → order waits for admin approval → track / cancel from *My orders*.
+2. **Seller** — register with NID documents → verify phone → admin approves KYC → sign in → create shop →
+   add products (reviewed by admin) → fulfil vendor orders (packed → shipped → delivered) → watch commission wallet.
+3. **Admin** — approve orders (splits per shop, deducts stock, debits commission) → dispatch to Pathao → mark delivered
+   or restock returns; review products & set commission; approve seller KYC; manage wallets, staff, content.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev     # development server
+npm run build   # production build
+npm run lint    # eslint (next/core-web-vitals)
+```
