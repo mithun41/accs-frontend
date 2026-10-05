@@ -11,6 +11,7 @@ const multipart = { headers: { 'Content-Type': 'multipart/form-data' } };
 /* ---------------- Auth & Account ---------------- */
 export const authApi = {
   login: (phone_number, password) => post('/auth/login/', { phone_number, password }),
+  loginOtp: (phone_number) => post('/auth/login-otp/', { phone_number }),
   adminLogin: (phone_number, password) => post('/admin/login/', { phone_number, password }),
   logout: (refresh_token) => post('/auth/logout/', { refresh_token }),
 
