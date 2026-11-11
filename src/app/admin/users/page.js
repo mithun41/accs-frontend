@@ -2,16 +2,17 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Users, BadgeCheck, Ban, CheckCircle2, XCircle, ShieldCheck, FileImage } from 'lucide-react';
+import { Users, BadgeCheck, Ban, CheckCircle2, XCircle, ShieldCheck, FileImage, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi, coreApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
+import { useSession } from '@/hooks/useSession';
 import { formatDate, getErrorMessage, humanize, mediaUrl, roleOf, toList, toMeta } from '@/lib/utils';
 import { PageHeader, Pagination, SearchInput, Tabs, DescriptionList } from '@/components/ui/Layout';
 import { EmptyState } from '@/components/ui/Feedback';
 import { Avatar } from '@/components/ui/Media';
 import { Select } from '@/components/ui/Field';
-import Modal from '@/components/ui/Modal';
+import Modal, { ConfirmDialog } from '@/components/ui/Modal';
 import Badge, { StatusBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import DataTable from '@/components/ui/Table';
@@ -34,7 +35,10 @@ function Doc({ label, src }) {
 function UserModal({ record, onClose, onChanged }) {
   const u = record.user;
   const kyc = record.kyc_profile;
+  const { user: currentUser } = useSession();
   const [busy, setBusy] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const act = async (kind, fn, msg) => {
     setBusy(kind);
@@ -50,59 +54,98 @@ function UserModal({ record, onClose, onChanged }) {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await adminApi.deleteUser(u.id);
+      toast.success(`User ${u.full_name || u.phone_number} permanently deleted`);
+      onChanged();
+      onClose();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to delete user'));
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   return (
-    <Modal
-      open
-      onClose={onClose}
-      size="lg"
-      title={u.full_name || u.phone_number}
-      description={`${humanize(roleOf(u) || (u.is_staff ? 'Staff' : 'User'))} · joined ${formatDate(u.created_at)}`}
-      footer={
-        <>
-          {u.is_active ? (
-            <Button variant="danger-outline" icon={Ban} loading={busy === 'suspend'} onClick={() => act('suspend', () => adminApi.suspend(u.id), 'Account suspended')}>Suspend</Button>
-          ) : (
-            <Button variant="secondary" icon={CheckCircle2} loading={busy === 'unsuspend'} onClick={() => act('unsuspend', () => adminApi.unsuspend(u.id), 'Account re-activated')}>Re-activate</Button>
-          )}
-          {kyc && kyc.status !== 'REJECTED' && (
-            <Button variant="danger-outline" icon={XCircle} loading={busy === 'reject'} onClick={() => act('reject', () => adminApi.rejectKyc(u.id), 'KYC rejected')}>Reject KYC</Button>
-          )}
-          {kyc && (kyc.status !== 'APPROVED' || !u.is_approved) && (
-            <Button icon={BadgeCheck} loading={busy === 'approve'} onClick={() => act('approve', () => adminApi.approveKyc(u.id), 'KYC approved — account activated')}>Approve KYC</Button>
-          )}
-          {!kyc && !u.is_approved && (
-            <Button icon={BadgeCheck} loading={busy === 'approve2'} onClick={() => act('approve2', () => adminApi.updateUser(u.id, { is_approved: true }), 'Account approved')}>Approve account</Button>
-          )}
-        </>
-      }
-    >
-      <div className="flex items-center gap-4">
-        <Avatar src={kyc?.profile_img} name={u.full_name || u.phone_number} className="size-14" />
-        <div className="flex flex-wrap gap-2">
-          <Badge tone={u.is_active ? 'green' : 'red'} dot>{u.is_active ? 'Active' : 'Suspended'}</Badge>
-          <Badge tone={u.is_approved ? 'green' : 'yellow'} dot>{u.is_approved ? 'Approved' : 'Not approved'}</Badge>
-          <Badge tone={u.is_phone_verified ? 'green' : 'yellow'} dot>{u.is_phone_verified ? 'Phone verified' : 'Phone unverified'}</Badge>
-          {kyc && <StatusBadge status={kyc.status} label={`KYC ${humanize(kyc.status).toLowerCase()}`} />}
+    <>
+      <Modal
+        open
+        onClose={onClose}
+        size="lg"
+        title={u.full_name || u.phone_number}
+        description={`${humanize(roleOf(u) || (u.is_staff ? 'Staff' : 'User'))} · joined ${formatDate(u.created_at)}`}
+        footer={
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <Button
+              variant="danger-outline"
+              icon={Trash2}
+              onClick={() => setConfirmDelete(true)}
+              disabled={currentUser?.id === u.id}
+              title={currentUser?.id === u.id ? 'You cannot delete your own account' : undefined}
+            >
+              Delete user
+            </Button>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {u.is_active ? (
+                <Button variant="danger-outline" icon={Ban} loading={busy === 'suspend'} onClick={() => act('suspend', () => adminApi.suspend(u.id), 'Account suspended')}>Suspend</Button>
+              ) : (
+                <Button variant="secondary" icon={CheckCircle2} loading={busy === 'unsuspend'} onClick={() => act('unsuspend', () => adminApi.unsuspend(u.id), 'Account re-activated')}>Re-activate</Button>
+              )}
+              {kyc && kyc.status !== 'REJECTED' && (
+                <Button variant="danger-outline" icon={XCircle} loading={busy === 'reject'} onClick={() => act('reject', () => adminApi.rejectKyc(u.id), 'KYC rejected')}>Reject KYC</Button>
+              )}
+              {kyc && (kyc.status !== 'APPROVED' || !u.is_approved) && (
+                <Button icon={BadgeCheck} loading={busy === 'approve'} onClick={() => act('approve', () => adminApi.approveKyc(u.id), 'KYC approved — account activated')}>Approve KYC</Button>
+              )}
+              {!kyc && !u.is_approved && (
+                <Button icon={BadgeCheck} loading={busy === 'approve2'} onClick={() => act('approve2', () => adminApi.updateUser(u.id, { is_approved: true }), 'Account approved')}>Approve account</Button>
+              )}
+            </div>
+          </div>
+        }
+      >
+        <div className="flex items-center gap-4">
+          <Avatar src={kyc?.profile_img} name={u.full_name || u.phone_number} className="size-14" />
+          <div className="flex flex-wrap gap-2">
+            <Badge tone={u.is_active ? 'green' : 'red'} dot>{u.is_active ? 'Active' : 'Suspended'}</Badge>
+            <Badge tone={u.is_approved ? 'green' : 'yellow'} dot>{u.is_approved ? 'Approved' : 'Not approved'}</Badge>
+            <Badge tone={u.is_phone_verified ? 'green' : 'yellow'} dot>{u.is_phone_verified ? 'Phone verified' : 'Phone unverified'}</Badge>
+            {kyc && <StatusBadge status={kyc.status} label={`KYC ${humanize(kyc.status).toLowerCase()}`} />}
+          </div>
         </div>
-      </div>
-      <DescriptionList
-        className="mt-6"
-        items={[
-          { label: 'Phone', value: u.phone_number },
-          { label: 'Date of birth', value: u.date_of_birth ? formatDate(u.date_of_birth) : '—' },
-          { label: 'Groups', value: (u.groups || []).join(', ') || '—' },
-          { label: 'NID number', value: kyc?.nid_number || '—' },
-          kyc?.verified_at && { label: 'KYC verified', value: formatDate(kyc.verified_at, true) },
-        ]}
+        <DescriptionList
+          className="mt-6"
+          items={[
+            { label: 'Phone', value: u.phone_number },
+            { label: 'Date of birth', value: u.date_of_birth ? formatDate(u.date_of_birth) : '—' },
+            { label: 'Groups', value: (u.groups || []).join(', ') || '—' },
+            { label: 'NID number', value: kyc?.nid_number || '—' },
+            kyc?.verified_at && { label: 'KYC verified', value: formatDate(kyc.verified_at, true) },
+          ]}
+        />
+        {kyc && (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Doc label="NID front" src={kyc.nid_front_image} />
+            <Doc label="NID back" src={kyc.nid_back_image} />
+            <Doc label="Birth certificate" src={kyc.birth_certificate_image} />
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title={`Permanently delete ${u.full_name || u.phone_number}?`}
+        message="This action cannot be undone. The user account, KYC profile, session tokens, and all related records will be permanently removed from the database."
+        confirmLabel="Permanently delete"
       />
-      {kyc && (
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <Doc label="NID front" src={kyc.nid_front_image} />
-          <Doc label="NID back" src={kyc.nid_back_image} />
-          <Doc label="Birth certificate" src={kyc.birth_certificate_image} />
-        </div>
-      )}
-    </Modal>
+    </>
   );
 }
 

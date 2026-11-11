@@ -143,6 +143,7 @@ export const adminApi = {
   pendingUsers: (params) => get('/auth/pending', params),
   user: (id) => get(`/auth/${id}`),
   updateUser: (id, data) => patch(`/auth/${id}`, data),
+  deleteUser: (id) => del(`/auth/${id}`),
   approveKyc: (id) => post(`/auth/${id}/approve-kyc`),
   rejectKyc: (id) => post(`/auth/${id}/reject-kyc`),
   suspend: (id) => post(`/auth/${id}/suspend`),

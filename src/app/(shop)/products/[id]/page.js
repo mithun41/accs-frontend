@@ -125,9 +125,16 @@ export default function ProductDetailPage({ params }) {
           <div className="mt-6 rounded-xl bg-slate-50 p-5 border border-slate-100">
             <PriceTag product={product} size="lg" />
             {hasDiscount && product.discount_end_date && (
-              <p className="mt-2 flex items-center gap-1.5 text-sm text-red-600">
-                <Clock className="size-4" /> Offer ends {formatDate(product.discount_end_date)}
-              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-red-600">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Clock className="size-4" /> Offer ends {formatDate(product.discount_end_date)}
+                </span>
+                {product.discount_start_date && (
+                  <span className="text-xs text-slate-500">
+                    (Valid from {formatDate(product.discount_start_date)})
+                  </span>
+                )}
+              </div>
             )}
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {outOfStock ? (

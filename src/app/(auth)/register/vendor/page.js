@@ -57,7 +57,9 @@ export default function VendorRegisterPage() {
     if (!validateDocs()) return;
     setLoading(true);
     setError('');
-    const role = roles.find((r) => r.name === 'ROLE' && r.value === form.business);
+    const role =
+      roles.find((r) => r.name === 'ROLE' && r.value === form.business) ||
+      roles.find((r) => r.name === 'ROLE' && r.value === 'VENDOR');
     try {
       await authApi.vendorRegister({
         full_name: form.full_name.trim(),
@@ -71,7 +73,7 @@ export default function VendorRegisterPage() {
       });
       setStep(2);
       setVerifyOpen(true);
-      toast.success('Account created — check your SMS for the code');
+      toast.success('Verification code sent to your phone');
     } catch (err) {
       const fe = getFieldErrors(err);
       setErrors(fe);
@@ -228,9 +230,24 @@ export default function VendorRegisterPage() {
         onClose={() => setVerifyOpen(false)}
         phone={normalizePhone(form.phone_number)}
         sendOnOpen={false}
-        onVerified={() => {
+        onVerifyCustom={async (otp) => {
+          const role =
+            roles.find((r) => r.name === 'ROLE' && r.value === form.business) ||
+            roles.find((r) => r.name === 'ROLE' && r.value === 'VENDOR');
+          await authApi.vendorRegister({
+            full_name: form.full_name.trim(),
+            phone_number: normalizePhone(form.phone_number),
+            date_of_birth: form.date_of_birth || undefined,
+            role: role?.id,
+            password: form.password,
+            confirm_password: form.confirm_password,
+            nid_number: form.nid_number.trim(),
+            otp_code: otp,
+            ...Object.fromEntries(Object.entries(files).filter(([, v]) => v)),
+          });
           setVerifyOpen(false);
           setDone(true);
+          toast.success('Application submitted successfully!');
         }}
       />
     </>

@@ -15,7 +15,7 @@ export default function VerifyPhoneModal(props) {
   return props.open ? <VerifyPhoneDialog {...props} /> : null;
 }
 
-function VerifyPhoneDialog({ onClose, phone, onVerified, sendOnOpen = true }) {
+function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnOpen = true }) {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [sentAt, setSentAt] = useState(0);
@@ -37,8 +37,12 @@ function VerifyPhoneDialog({ onClose, phone, onVerified, sendOnOpen = true }) {
   const verify = async () => {
     setLoading(true);
     try {
-      const res = await authApi.verifyOtp(phone, otp);
-      onVerified?.(res);
+      if (onVerifyCustom) {
+        await onVerifyCustom(otp);
+      } else {
+        const res = await authApi.verifyOtp(phone, otp);
+        onVerified?.(res);
+      }
     } catch (err) {
       toast.error(getErrorMessage(err, 'Invalid code'));
     } finally {

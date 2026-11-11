@@ -1,8 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  skipTrailingSlashRedirect: true,
+  allowedDevOrigins: ['192.168.0.166', '192.168.*', '127.0.0.1', 'localhost'],
   images: {
-    // Product / shop media is served by the Django backend; rendered with plain <img>.
     unoptimized: true,
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*/',
+        destination: 'http://127.0.0.1:8000/api/:path*/',
+      },
+      {
+        source: '/api/:path*',
+        destination: 'http://127.0.0.1:8000/api/:path*',
+      },
+      {
+        source: '/media/:path*',
+        destination: 'http://127.0.0.1:8000/media/:path*',
+      },
+    ];
   },
 };
 

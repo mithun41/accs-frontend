@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Store } from 'lucide-react';
+import { ShoppingCart, Store, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart';
-import { cn, formatPrice, getErrorMessage, primaryImage, productPrice } from '@/lib/utils';
+import { cn, formatDate, formatPrice, getErrorMessage, primaryImage, productPrice } from '@/lib/utils';
 import { Thumb } from '@/components/ui/Media';
 import { Skeleton } from '@/components/ui/Feedback';
 
@@ -86,6 +86,11 @@ export default function ProductCard({ product }) {
         <Link href={`/products/${product.id}`} className="line-clamp-2 min-h-10 text-sm font-medium text-slate-800 hover:text-brand-700">
           {product.title}
         </Link>
+        {discountPercent > 0 && product.discount_end_date && (
+          <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-red-600">
+            <Clock className="size-3 shrink-0" /> Ends {formatDate(product.discount_end_date)}
+          </p>
+        )}
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
           <PriceTag product={product} size="sm" />
           <button
