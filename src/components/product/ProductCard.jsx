@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ShoppingCart, Store, Clock } from 'lucide-react';
+
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart';
 import { cn, formatDate, formatPrice, getErrorMessage, primaryImage, productPrice } from '@/lib/utils';
