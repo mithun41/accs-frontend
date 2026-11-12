@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
+import { useWishlistStore } from '@/store/wishlist';
 import { authApi } from '@/lib/services';
 import { isAdmin, isVendor, roleOf } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ export function useSession() {
       setSession(data);
       // Merge the guest cart into the user's cart
       fetchCart();
+      useWishlistStore.getState().load();
     },
     [setSession, fetchCart]
   );
@@ -43,6 +45,7 @@ export function useSession() {
       /* ignore */
     }
     clearSession();
+    useWishlistStore.getState().reset();
     fetchCart();
   }, [clearSession, fetchCart]);
 

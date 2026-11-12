@@ -3,7 +3,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { Logo } from '@/components/layout/SiteHeader';
 
 const points = [
-  'Thousands of products from verified sellers',
+  'Textbooks, guides & model tests for every class',
   'Cash on delivery across all 64 districts',
   'Track every parcel with Pathao Courier',
 ];
@@ -18,7 +18,7 @@ export default function AuthLayout({ children }) {
           <Logo light />
         </div>
         <div className="relative max-w-md">
-          <h2 className="text-3xl font-semibold leading-tight text-white">Bangladesh&apos;s marketplace for buyers, retailers & wholesalers.</h2>
+          <h2 className="text-3xl font-semibold leading-tight text-white">Every school book from Class 1 to 12, delivered to your door.</h2>
           <ul className="mt-8 space-y-4">
             {points.map((p) => (
               <li key={p} className="flex items-center gap-3 text-brand-50">

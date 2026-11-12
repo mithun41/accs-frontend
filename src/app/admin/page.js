@@ -2,35 +2,32 @@
 
 import Link from 'next/link';
 import {
-  Users, Store, ShoppingBag, Percent, Package, AlertTriangle, Truck, CheckCircle2, RotateCcw, XCircle, Boxes, ArrowRight, Clock, UserCheck,
+  Users, Store, ShoppingBag, Percent, Package, AlertTriangle, ArrowRight, Clock, UserCheck, LayoutDashboard, Images, LayoutTemplate, CheckCircle2,
 } from 'lucide-react';
 import { adminApi, catalogApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { formatDate, formatPrice, toList, toMeta } from '@/lib/utils';
-import { PageHeader, Section, StatCard } from '@/components/ui/Layout';
+import { BannerAction, Section, StatCard, WelcomeBanner } from '@/components/ui/Layout';
+import { BarChart, DonutChart } from '@/components/ui/Charts';
+import { useSession } from '@/hooks/useSession';
 import { ErrorState, PageLoader, EmptyState } from '@/components/ui/Feedback';
 import { Stars } from '@/components/ui/Media';
 import { StatusBadge } from '@/components/ui/Badge';
 import DataTable from '@/components/ui/Table';
 
 function SalesChart({ data }) {
-  const rows = data.map((d) => ({ label: new Date(d.month).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }), value: Number(d.sales_volume || 0) }));
+  const rows = data.map((d) => ({ label: new Date(d.month).toLocaleDateString('en-GB', { month: 'short' }), value: Number(d.sales_volume || 0) }));
   if (!rows.length) return <EmptyState icon={ShoppingBag} title="No delivered sales yet" description="Monthly delivered sales will be charted here." />;
-  const max = Math.max(...rows.map((r) => r.value), 1);
-  return (
-    <div className="flex h-56 items-end gap-3">
-      {rows.map((r) => (
-        <div key={r.label} className="group flex flex-1 flex-col items-center gap-2">
-          <span className="text-xs font-medium text-slate-700 opacity-0 transition-opacity group-hover:opacity-100">{formatPrice(r.value)}</span>
-          <div className="w-full max-w-14 rounded-t-md bg-brand-500 transition-colors group-hover:bg-brand-600" style={{ height: `${Math.max(4, (r.value / max) * 180)}px` }} />
-          <span className="text-xs text-slate-500">{r.label}</span>
-        </div>
-      ))}
-    </div>
-  );
+  return <BarChart data={rows} format={formatPrice} height={240} />;
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
 export default function AdminDashboard() {
+  const { user } = useSession();
   const { data, loading, error, reload } = useFetch(() => adminApi.analytics(), []);
   const pendingOrders = useFetch(() => adminApi.orders({ status: 'PENDING_ADMIN_APPROVAL', page_size: 5 }), []);
   const pendingProducts = useFetch(() => catalogApi.pendingProducts(), []);
@@ -51,7 +48,18 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <PageHeader title="Dashboard" description="A live overview of the ACCS marketplace." />
+      <WelcomeBanner
+        icon={LayoutDashboard}
+        title={`${greeting()}, ${user?.full_name?.split(' ')[0] || 'Admin'}`}
+        subtitle={`Here is what is happening in your book shop today · ${new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`}
+        actions={
+          <>
+            <BannerAction href="/admin/orders?status=PENDING_ADMIN_APPROVAL" icon={Clock} primary>Review orders</BannerAction>
+            <BannerAction href="/admin/banners" icon={Images}>Banners</BannerAction>
+            <BannerAction href="/admin/landing-pages/new" icon={LayoutTemplate}>New landing page</BannerAction>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total users" value={d.users?.total || 0} icon={Users} tone="blue" href="/admin/users" />
@@ -70,9 +78,9 @@ export default function AdminDashboard() {
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {queue.map((q) => (
           <Link key={q.label} href={q.href} className="card flex items-center gap-4 p-5 transition-shadow hover:shadow-lift">
-            <span className={`flex size-11 items-center justify-center rounded-xl ${q.tone}`}><q.icon className="size-5" /></span>
+            <span className={`flex size-12 items-center justify-center rounded-2xl ${q.tone}`}><q.icon className="size-5" /></span>
             <div className="flex-1">
-              <p className="text-2xl font-semibold text-slate-900">{q.value}</p>
+              <p className="text-2xl font-bold text-slate-900">{q.value}</p>
               <p className="text-sm text-slate-500">{q.label}</p>
             </div>
             <ArrowRight className="size-4 text-slate-300" />
@@ -102,22 +110,19 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <Section title="Courier & parcels">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {[
-              { l: 'In transit', v: courier.in_transit_parcels, i: Truck, c: 'text-sky-600' },
-              { l: 'Delivered', v: courier.delivered_parcels, i: CheckCircle2, c: 'text-emerald-600' },
-              { l: 'Returned', v: courier.returned_parcels, i: RotateCcw, c: 'text-orange-600' },
-              { l: 'Cancelled / rejected', v: courier.cancelled_parcels, i: XCircle, c: 'text-red-600' },
-              { l: 'Pending restock', v: courier.pending_restock_parcels, i: AlertTriangle, c: 'text-amber-600' },
-              { l: 'Restocked', v: courier.restocked_parcels, i: Boxes, c: 'text-violet-600' },
-            ].map((x) => (
-              <div key={x.l} className="rounded-lg border border-slate-100 bg-slate-50/60 p-3">
-                <x.i className={`size-4 ${x.c}`} />
-                <p className="mt-2 text-xl font-semibold text-slate-900">{x.v ?? 0}</p>
-                <p className="text-xs text-slate-500">{x.l}</p>
-              </div>
-            ))}
+        <Section title="Courier & parcels" description="Where every parcel is right now">
+          <DonutChart
+            centerLabel="parcels"
+            segments={[
+              { label: 'In transit', value: courier.in_transit_parcels || 0, color: '#0ea5e9' },
+              { label: 'Delivered', value: courier.delivered_parcels || 0, color: '#10b981' },
+              { label: 'Returned', value: courier.returned_parcels || 0, color: '#f97316' },
+              { label: 'Cancelled / rejected', value: courier.cancelled_parcels || 0, color: '#ef4444' },
+            ]}
+          />
+          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm">
+            <p className="flex items-center gap-2 text-slate-600"><AlertTriangle className="size-4 text-amber-500" /> Pending restock <strong className="ml-auto text-slate-900">{courier.pending_restock_parcels ?? 0}</strong></p>
+            <p className="flex items-center gap-2 text-slate-600"><Package className="size-4 text-violet-500" /> Restocked <strong className="ml-auto text-slate-900">{courier.restocked_parcels ?? 0}</strong></p>
           </div>
         </Section>
         <Section title="Inventory health">

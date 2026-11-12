@@ -7,11 +7,11 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata = {
   title: {
-    default: 'ACCS Marketplace — Shop from trusted sellers across Bangladesh',
-    template: '%s · ACCS Marketplace',
+    default: 'ACCS Book Shop — Class 1 to 12 books online in Bangladesh',
+    template: '%s · ACCS Book Shop',
   },
   description:
-    'ACCS is a multi-vendor marketplace connecting buyers with verified retailers and wholesalers across Bangladesh, with fast Pathao delivery and cash on delivery.',
+    'Buy Class 1 to 12 textbooks, guide books and model tests online from trusted book sellers across Bangladesh. Cash on delivery with Pathao.',
 };
 
 export default function RootLayout({ children }) {

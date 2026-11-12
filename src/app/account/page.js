@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import {
-  Package, Clock, CheckCircle2, Megaphone, ArrowRight, User, MapPin, Settings, ShoppingBag, Store, LayoutDashboard,
+  Package, Clock, CheckCircle2, Megaphone, ArrowRight, User, MapPin, Settings, ShoppingBag, Store, LayoutDashboard, Heart,
 } from 'lucide-react';
 import { coreApi, orderApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { useSession } from '@/hooks/useSession';
 import { formatDate, formatPrice, toList, toMeta } from '@/lib/utils';
 import { orderProgress } from '@/lib/orders';
-import { PageHeader, Section, StatCard } from '@/components/ui/Layout';
+import { BannerAction, Section, StatCard, WelcomeBanner } from '@/components/ui/Layout';
 import { EmptyState } from '@/components/ui/Feedback';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -32,10 +32,16 @@ export default function AccountDashboard() {
 
   return (
     <>
-      <PageHeader
+      <WelcomeBanner
+        icon={User}
         title={`Hello, ${user?.full_name?.split(' ')[0] || 'there'} 👋`}
-        description="Here's a summary of your account."
-        actions={<Button href="/products" icon={ShoppingBag}>Continue shopping</Button>}
+        subtitle="Track your book orders, saved books and account settings in one place."
+        actions={
+          <>
+            <BannerAction href="/products" icon={ShoppingBag} primary>Continue shopping</BannerAction>
+            <BannerAction href="/account/wishlist" icon={Heart}>Wishlist</BannerAction>
+          </>
+        }
       />
 
       {(isVendor || isAdmin) && (

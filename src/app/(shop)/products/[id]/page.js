@@ -3,7 +3,7 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, ShoppingCart, Zap, Store, MapPin, ShieldCheck, Truck, RotateCcw, Package, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ShoppingCart, Zap, Store, MapPin, ShieldCheck, Truck, RotateCcw, Package, Clock, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react';
 import { catalogApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { cn, formatDate, mediaUrl, toList } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { ErrorState, PageLoader } from '@/components/ui/Feedback';
 import QuantityStepper from '@/components/ui/QuantityStepper';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
+import WishlistButton from '@/components/product/WishlistButton';
+import ProductReviews from '@/components/product/ProductReviews';
 
 function Gallery({ product }) {
   const images = [...(product.images || [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
@@ -33,13 +35,15 @@ function Gallery({ product }) {
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={mediaUrl(img.image)} alt="" className="size-full object-cover" />
+              <img src={mediaUrl(img.image)} alt="" className="size-full object-contain" />
             </button>
           ))}
         </div>
       )}
-      <div className="relative flex-1 aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-white">
-        <Thumb src={current?.image} alt={product.title} seed={product.id} rounded="rounded-none" className="size-full" />
+      <div className="relative flex flex-1 items-center justify-center rounded-lg border border-slate-200/70 bg-white p-6 sm:p-10">
+        <div className="aspect-[3/4] w-full max-w-sm">
+          <Thumb src={current?.image} alt={product.title} seed={product.id} icon={BookOpen} fit="contain" rounded="rounded-md" className="size-full bg-transparent shadow-[0_12px_30px_-12px_rgb(15_23_42/0.45)]" />
+        </div>
       </div>
     </div>
   );
@@ -55,11 +59,11 @@ export default function ProductDetailPage({ params }) {
 
   const categoryId = product?.category;
   const related = useFetch(
-    () => catalogApi.products({ category: categoryId, page_size: 5 }),
+    () => catalogApi.products({ category: categoryId, page_size: 6 }),
     [categoryId],
     { enabled: Boolean(categoryId) }
   );
-  const relatedProducts = toList(related.data).filter((p) => String(p.id) !== String(id)).slice(0, 4);
+  const relatedProducts = toList(related.data).filter((p) => String(p.id) !== String(id)).slice(0, 5);
 
   if (loading) return <PageLoader />;
   if (error || !product) {
@@ -110,8 +114,26 @@ export default function ProductDetailPage({ params }) {
         <Gallery product={product} />
 
         <div>
-          {category && <Badge tone="brand">{category.name}</Badge>}
+          <div className="flex flex-wrap gap-2">
+            {category?.parent_name && <Badge tone="brand">{category.parent_name}</Badge>}
+            {category && <Badge tone="gray">{category.name}</Badge>}
+          </div>
           <h1 className="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">{product.title}</h1>
+          {product.rating_count > 0 && (
+            <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
+              <Stars value={product.rating_avg} size="size-4" /> <strong>{Number(product.rating_avg).toFixed(1)}</strong> ({product.rating_count} review{product.rating_count !== 1 && 's'})
+            </p>
+          )}
+          {(product.author || product.publisher) && (
+            <div className="mt-2 space-y-0.5 text-[15px] text-slate-600">
+              {product.author && (
+                <p>by <Link href={`/products?author=${encodeURIComponent(product.author)}`} className="font-medium text-brand-600 hover:underline">{product.author}</Link></p>
+              )}
+              {product.publisher && (
+                <p>Publisher: <Link href={`/products?publisher=${encodeURIComponent(product.publisher)}`} className="font-medium text-slate-800 hover:text-brand-600 hover:underline">{product.publisher}</Link></p>
+              )}
+            </div>
+          )}
 
           {shop && (
             <Link href={`/shops/${shop.id}`} className="mt-3 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand-700">
@@ -165,6 +187,7 @@ export default function ProductDetailPage({ params }) {
             <Button size="lg" icon={Zap} className="flex-1 min-w-40" disabled={outOfStock} onClick={handleBuyNow}>
               Buy now
             </Button>
+            <WishlistButton productId={product.id} withLabel />
           </div>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
@@ -202,7 +225,7 @@ export default function ProductDetailPage({ params }) {
 
       <section className="mt-12 card">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="font-semibold text-slate-900">Product details</h2>
+          <h2 className="font-semibold text-slate-900">Book details</h2>
         </div>
         <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">
@@ -210,8 +233,11 @@ export default function ProductDetailPage({ params }) {
           </p>
           <dl className="space-y-3 text-sm">
             {[
-              ['Category', category?.name],
-              ['Size', product.size],
+              ['Author', product.author],
+              ['Publisher', product.publisher],
+              ['Class', category?.parent_name || (category && !category.parent ? category.name : null)],
+              ['Subject', category?.parent ? category.name : null],
+              ['Edition / size', product.size],
               ['Minimum order', `${moq} pcs`],
               ['Seller', shop?.shop_name],
               ['Listed on', formatDate(product.created_at)],
@@ -225,12 +251,14 @@ export default function ProductDetailPage({ params }) {
         </div>
       </section>
 
+      <ProductReviews product={product} onChanged={reload} />
+
       {relatedProducts.length > 0 && (
         <section className="mt-12">
           <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold text-slate-900">
             <Package className="size-5 text-brand-600" /> You may also like
           </h2>
-          <ProductGrid products={relatedProducts} />
+          <ProductGrid products={relatedProducts} className="xl:grid-cols-5" />
         </section>
       )}
     </div>

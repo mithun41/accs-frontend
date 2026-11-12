@@ -17,7 +17,7 @@ export default function AboutPage() {
         <div className="container-page max-w-3xl">
           <h1 className="text-4xl font-bold tracking-tight text-white">About ACCS</h1>
           <p className="mt-4 text-lg text-brand-100/90">
-            A marketplace built for Bangladesh — connecting buyers with trusted retailers and wholesalers, with nationwide delivery.
+            An online book shop for Bangladeshi students — Class 1 to 12 textbooks, guides and model tests from trusted book sellers, delivered nationwide.
           </p>
         </div>
       </section>

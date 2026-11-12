@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MapPin, CreditCard, Banknote, ShieldCheck, Truck, Lock, Package } from 'lucide-react';
+import { MapPin, CreditCard, Banknote, ShieldCheck, Truck, Lock, Package, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import RequireAuth from '@/components/layout/RequireAuth';
 import LocationPicker from '@/components/address/LocationPicker';
-import { authApi, orderApi, pathaoApi } from '@/lib/services';
+import { authApi, marketingApi, orderApi, pathaoApi } from '@/lib/services';
 import { useCartStore } from '@/store/cart';
 import { useSession } from '@/hooks/useSession';
 import { cn, formatPrice, getErrorMessage, isValidBDPhone, normalizePhone, primaryImage } from '@/lib/utils';
@@ -32,6 +32,9 @@ function CheckoutView() {
   const [errors, setErrors] = useState({});
   const [quote, setQuote] = useState({ key: null, fee: null });
   const [placing, setPlacing] = useState(false);
+  const [couponInput, setCouponInput] = useState('');
+  const [coupon, setCoupon] = useState(null); // { code, discount, description, forSubtotal }
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // Make sure the guest cart is merged into the user cart
   useEffect(() => {
@@ -90,6 +93,25 @@ function CheckoutView() {
     return Object.keys(e).length === 0;
   };
 
+  // A coupon checked against an older subtotal is re-validated by the server at order time
+  const activeCoupon = coupon && coupon.forSubtotal === subtotal ? coupon : null;
+  const applyCoupon = async (e) => {
+    e.preventDefault();
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponLoading(true);
+    try {
+      const res = await marketingApi.validateCoupon(code, subtotal);
+      setCoupon({ code: res.code, discount: res.discount, description: res.description, forSubtotal: subtotal });
+      setCouponInput('');
+      toast.success(res.description || 'Coupon applied');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'This coupon cannot be used'));
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const placeOrder = async () => {
     if (!validate()) {
       toast.error('Please complete your delivery details');
@@ -122,6 +144,7 @@ function CheckoutView() {
         pathao_recipient_zone_id: location.zone_id,
         pathao_recipient_area_id: location.area_id,
         payment_method: payment,
+        coupon_code: coupon?.code || undefined,
       });
       await fetchCart();
       toast.success('Order placed successfully!');
@@ -237,8 +260,24 @@ function CheckoutView() {
                 </li>
               ))}
             </ul>
+            <div className="border-t border-slate-100 px-6 py-4">
+              {activeCoupon ? (
+                <div className="flex items-center justify-between rounded-lg border border-dashed border-emerald-300 bg-emerald-50 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2 text-emerald-800"><Tag className="size-4" /> <strong className="font-mono">{activeCoupon.code}</strong> applied</span>
+                  <button type="button" onClick={() => setCoupon(null)} className="text-xs font-medium text-slate-500 hover:text-red-600">Remove</button>
+                </div>
+              ) : (
+                <form onSubmit={applyCoupon} className="flex gap-2">
+                  <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Coupon code" className="h-9 uppercase" />
+                  <Button type="submit" variant="secondary" size="sm" className="h-9" loading={couponLoading}>Apply</Button>
+                </form>
+              )}
+            </div>
             <dl className="space-y-2.5 border-t border-slate-100 px-6 py-4 text-sm">
               <div className="flex justify-between"><dt className="text-slate-500">Subtotal</dt><dd className="font-medium">{formatPrice(subtotal)}</dd></div>
+              {activeCoupon && (
+                <div className="flex justify-between text-emerald-700"><dt>Coupon discount</dt><dd className="font-medium">−{formatPrice(activeCoupon.discount)}</dd></div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-slate-500 flex items-center gap-1.5"><Truck className="size-4" /> Delivery</dt>
                 <dd className="font-medium">
@@ -248,7 +287,7 @@ function CheckoutView() {
             </dl>
             <div className="flex justify-between border-t border-slate-100 px-6 py-4">
               <span className="font-semibold text-slate-900">Total</span>
-              <span className="text-xl font-semibold text-slate-900">{formatPrice(subtotal + (deliveryFee || 0))}</span>
+              <span className="text-xl font-semibold text-slate-900">{formatPrice(subtotal + (deliveryFee || 0) - (activeCoupon ? Number(activeCoupon.discount) : 0))}</span>
             </div>
             <div className="px-6 pb-6">
               <Button size="lg" className="w-full" icon={Lock} loading={placing} onClick={placeOrder}>

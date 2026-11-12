@@ -19,6 +19,7 @@ function CategoryModal({ category, parentId, roots, onClose, onSaved }) {
     name: category?.name || '',
     description: category?.description || '',
     parent: category ? category.parent || '' : parentId || '',
+    position: category?.position ?? 0,
   });
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -55,9 +56,14 @@ function CategoryModal({ category, parentId, roots, onClose, onSaved }) {
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_140px]">
         <div className="space-y-4">
-          <Field label="Name" required>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus />
-          </Field>
+          <div className="grid grid-cols-[minmax(0,1fr)_100px] gap-3">
+            <Field label="Name" required>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} autoFocus placeholder="e.g. Class 6 or Mathematics" />
+            </Field>
+            <Field label="Order" hint="Lower first">
+              <Input type="number" min="0" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+            </Field>
+          </div>
           <Field label="Parent category" hint="Leave empty for a top-level category">
             <Select value={form.parent} onChange={(e) => setForm({ ...form, parent: e.target.value })}>
               <option value="">— Top level —</option>

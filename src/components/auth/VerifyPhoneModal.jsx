@@ -15,14 +15,14 @@ export default function VerifyPhoneModal(props) {
   return props.open ? <VerifyPhoneDialog {...props} /> : null;
 }
 
-function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnOpen = true }) {
+// `sendCode` defaults to the new-number OTP endpoint; pass authApi.loginOtp for existing accounts
+function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnOpen = true, sendCode = authApi.sendOtp }) {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [sentAt, setSentAt] = useState(0);
 
   const send = () =>
-    authApi
-      .sendOtp(phone)
+    sendCode(phone)
       .then(() => {
         setSentAt(Date.now());
         toast.success('Verification code sent');

@@ -4,25 +4,24 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
-  ShoppingCart, Search, User, LogOut, Package, LayoutDashboard, Store, ChevronDown, Menu, X, MapPin, Shield, Truck, Settings,
+  ShoppingCart, Search, User, LogOut, Package, LayoutDashboard, Store, ChevronDown, Menu, X, Shield, Truck, Settings, BookOpen, Percent, Heart,
 } from 'lucide-react';
 import { useSession } from '@/hooks/useSession';
 import { useCartStore } from '@/store/cart';
-import { catalogApi } from '@/lib/services';
-import { cn, toList } from '@/lib/utils';
+import { useWishlistStore } from '@/store/wishlist';
+import { useCategoryTree } from '@/hooks/useCategoryTree';
+import { cn } from '@/lib/utils';
 import { Avatar } from '@/components/ui/Media';
 
 export function Logo({ className, light = false }) {
   return (
     <Link href="/" className={cn('flex items-center gap-2 shrink-0', className)}>
-      <span className="flex size-9 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 7h12l-1 12H7L6 7Z" />
-          <path d="M9 7a3 3 0 0 1 6 0" />
-        </svg>
+      <span className={cn('flex size-10 items-center justify-center rounded-lg shadow-sm', light ? 'bg-white text-brand-600' : 'bg-brand-600 text-white')}>
+        <BookOpen className="size-5" strokeWidth={2.2} />
       </span>
-      <span className={cn('text-lg font-bold tracking-tight', light ? 'text-white' : 'text-slate-900')}>
-        ACCS<span className="text-brand-600">.</span>
+      <span className="leading-none">
+        <span className={cn('block text-xl font-extrabold tracking-tight', light ? 'text-white' : 'text-brand-600')}>ACCS</span>
+        <span className={cn('block text-[10px] font-semibold uppercase tracking-[0.25em]', light ? 'text-white/80' : 'text-slate-500')}>Book shop</span>
       </span>
     </Link>
   );
@@ -48,12 +47,12 @@ function SearchForm({ initial, className }) {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search products, brands and shops…"
-        className="input h-11 rounded-full pl-5 pr-14 bg-slate-50 border-slate-200 focus:bg-white"
+        placeholder="Search by book name, author, publisher or subject…"
+        className="input h-11 rounded-full border-slate-300 bg-white pl-5 pr-14 focus:border-brand-500"
       />
       <button
         type="submit"
-        className="absolute right-1 top-1 flex h-9 w-11 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
+        className="absolute right-1 top-1 flex h-9 w-12 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
         aria-label="Search"
       >
         <Search className="size-4" />
@@ -145,6 +144,20 @@ function UserMenu() {
   );
 }
 
+function WishlistLink() {
+  const count = useWishlistStore((s) => s.ids.length);
+  return (
+    <Link href="/account/wishlist" className="relative btn btn-ghost btn-icon hidden h-10 w-10 sm:inline-flex" aria-label="Wishlist">
+      <Heart className="size-5" />
+      {count > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex min-w-5 h-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-semibold text-white ring-2 ring-white">
+          {count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 function CartButton() {
   const count = useCartStore((s) => (s.cart?.items || []).reduce((n, i) => n + i.quantity, 0));
   return (
@@ -159,34 +172,96 @@ function CartButton() {
   );
 }
 
+/** Class groups shown in the navigation bar (resolved to category ids from the tree). */
+const CLASS_GROUPS = [
+  { label: 'Primary (1–5)', classes: [1, 2, 3, 4, 5] },
+  { label: 'Junior (6–8)', classes: [6, 7, 8] },
+  { label: 'SSC (9–10)', classes: [9, 10] },
+  { label: 'HSC (11–12)', classes: [11, 12] },
+];
+
+function classIds(tree, numbers) {
+  return tree.filter((c) => numbers.some((n) => c.name === `Class ${n}`)).map((c) => c.id);
+}
+
+function AllCategoriesMenu({ tree }) {
+  return (
+    <div className="group relative">
+      <Link href="/products" className="flex h-11 items-center gap-2 bg-brand-600 px-4 font-semibold text-white hover:bg-brand-700">
+        <Menu className="size-4" /> All categories <ChevronDown className="size-4" />
+      </Link>
+      {tree.length > 0 && (
+        <div className="invisible absolute left-0 top-full z-50 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
+          <div className="grid w-[640px] grid-cols-3 gap-x-6 gap-y-4 rounded-b-xl border border-slate-200 bg-white p-5 shadow-lift">
+            {tree.map((c) => (
+              <div key={c.id}>
+                <Link href={`/products?category=${c.id}`} className="text-sm font-semibold text-slate-900 hover:text-brand-600">
+                  {c.name}
+                </Link>
+                <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                  {(c.subcategories || []).slice(0, 4).map((s) => (
+                    <Link key={s.id} href={`/products?category=${s.id}`} className="text-xs text-slate-500 hover:text-brand-600">
+                      {s.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileClassItem({ c }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-slate-100 last:border-0">
+      <div className="flex items-center">
+        <Link href={`/products?category=${c.id}`} className="flex-1 px-3 py-2.5 text-slate-800">{c.name}</Link>
+        {c.subcategories?.length > 0 && (
+          <button onClick={() => setOpen((o) => !o)} className="px-3 py-2.5 text-slate-400" aria-label={`Show ${c.name} subjects`}>
+            <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="pb-2">
+          {c.subcategories.map((s) => (
+            <Link key={s.id} href={`/products?category=${s.id}`} className="block py-1.5 pl-7 pr-3 text-sm text-slate-500 hover:text-brand-600">
+              {s.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SiteHeader() {
-  const [categories, setCategories] = useState([]);
+  const tree = useCategoryTree();
   const [mobileOpenAt, setMobileOpenAt] = useState(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    catalogApi.categoryTree().then((res) => setCategories(toList(res))).catch(() => {});
-  }, []);
 
   const mobileOpen = mobileOpenAt === pathname;
   const setMobileOpen = (fn) => setMobileOpenAt((cur) => ((typeof fn === 'function' ? fn(cur === pathname) : fn) ? pathname : null));
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
-      <div className="hidden md:block bg-slate-900 text-slate-300 text-xs">
-        <div className="container-page flex h-9 items-center justify-between">
-          <p className="flex items-center gap-2">
-            <Truck className="size-3.5 text-brand-400" /> Nationwide delivery with Pathao · Cash on delivery available
+    <header className="sticky top-0 z-40 bg-white shadow-[0_1px_0_rgb(226_232_240)]">
+      <div className="bg-brand-600 text-white">
+        <div className="container-page flex h-9 items-center justify-between gap-4 text-xs sm:text-[13px]">
+          <p className="flex items-center gap-2 truncate font-medium">
+            <BookOpen className="size-4 shrink-0" /> New session books for Class 1–12 are in stock — cash on delivery all over Bangladesh
           </p>
-          <div className="flex items-center gap-5">
-            <Link href="/register/vendor" className="hover:text-white">Sell on ACCS</Link>
-            <Link href="/shops" className="hover:text-white">Browse shops</Link>
-            <Link href="/about" className="hover:text-white">About</Link>
+          <div className="hidden items-center gap-5 md:flex">
+            <Link href="/account/orders" className="flex items-center gap-1.5 hover:text-white/80"><Truck className="size-3.5" /> Track order</Link>
+            <Link href="/register/vendor" className="hover:text-white/80">Sell on ACCS</Link>
           </div>
         </div>
       </div>
 
-      <div className="container-page flex h-16 items-center gap-4 lg:gap-8">
+      <div className="container-page flex h-[72px] items-center gap-4 lg:gap-10">
         <button className="btn btn-ghost btn-icon lg:hidden -ml-2" onClick={() => setMobileOpen((o) => !o)} aria-label="Menu">
           {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
@@ -195,6 +270,7 @@ export default function SiteHeader() {
           <SearchBar className="hidden md:block flex-1 max-w-2xl" />
         </Suspense>
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <WishlistLink />
           <CartButton />
           <UserMenu />
         </div>
@@ -206,61 +282,46 @@ export default function SiteHeader() {
         </Suspense>
       </div>
 
-      <nav className="hidden lg:block border-t border-slate-100">
-        <div className="container-page flex h-11 items-center gap-1 overflow-x-auto scrollbar-none text-sm">
-          <Link href="/products" className="flex items-center gap-1.5 rounded-md px-3 py-1.5 font-semibold text-slate-900 hover:bg-slate-100">
-            <Menu className="size-4" /> All products
-          </Link>
-          {categories.slice(0, 8).map((c) => (
-            <div key={c.id} className="group relative">
-              <Link
-                href={`/products?category=${c.id}`}
-                className="flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              >
-                {c.name}
-                {c.subcategories?.length > 0 && <ChevronDown className="size-3.5 text-slate-400" />}
-              </Link>
-              {c.subcategories?.length > 0 && (
-                <div className="invisible absolute left-0 top-full z-50 pt-1 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
-                  <div className="w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lift">
-                    {c.subcategories.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/products?category=${s.id}`}
-                        className="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      >
-                        {s.name}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-          <Link href="/shops" className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-slate-600 hover:bg-slate-100">
-            <Store className="size-4" /> Shops
+      <nav className="hidden border-t border-slate-100 lg:block">
+        <div className="container-page flex items-center gap-1 text-sm">
+          <AllCategoriesMenu tree={tree} />
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none px-2">
+            {CLASS_GROUPS.map((g) => {
+              const ids = classIds(tree, g.classes);
+              return (
+                <Link
+                  key={g.label}
+                  href={ids.length ? `/products?category=${ids.join(',')}` : '/products'}
+                  className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700"
+                >
+                  {g.label}
+                </Link>
+              );
+            })}
+            <Link href="/products?discounted=1" className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-medium text-brand-600 hover:bg-brand-50">
+              <Percent className="size-4" /> Offers
+            </Link>
+            <Link href="/products?ordering=-created_at" className="whitespace-nowrap rounded-md px-3 py-2 font-medium text-slate-700 hover:bg-brand-50 hover:text-brand-700">
+              New arrivals
+            </Link>
+          </div>
+          <Link href="/shops" className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-slate-600 hover:bg-slate-100">
+            <Store className="size-4" /> Book shops
           </Link>
         </div>
       </nav>
 
       {mobileOpen && (
         <div className="lg:hidden border-t border-slate-100 bg-white max-h-[70vh] overflow-y-auto">
-          <div className="container-page py-3 space-y-1">
-            <Link href="/products" className="block rounded-lg px-3 py-2.5 font-semibold text-slate-900 hover:bg-slate-50">All products</Link>
-            <Link href="/shops" className="block rounded-lg px-3 py-2.5 text-slate-700 hover:bg-slate-50">Shops</Link>
-            {categories.map((c) => (
-              <div key={c.id}>
-                <Link href={`/products?category=${c.id}`} className="block rounded-lg px-3 py-2.5 text-slate-700 hover:bg-slate-50">
-                  {c.name}
-                </Link>
-                {c.subcategories?.map((s) => (
-                  <Link key={s.id} href={`/products?category=${s.id}`} className="block rounded-lg py-2 pl-7 pr-3 text-sm text-slate-500 hover:bg-slate-50">
-                    {s.name}
-                  </Link>
-                ))}
-              </div>
-            ))}
-            <Link href="/register/vendor" className="block rounded-lg px-3 py-2.5 text-brand-700 font-medium hover:bg-brand-50">Sell on ACCS</Link>
+          <div className="container-page py-3">
+            <div className="mb-2 flex flex-wrap gap-2">
+              <Link href="/products" className="rounded-full bg-brand-600 px-3 py-1.5 text-sm font-medium text-white">All books</Link>
+              <Link href="/products?discounted=1" className="rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-700">Offers</Link>
+              <Link href="/shops" className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">Book shops</Link>
+            </div>
+            <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Classes</p>
+            {tree.map((c) => <MobileClassItem key={c.id} c={c} />)}
+            <Link href="/register/vendor" className="mt-2 block rounded-lg px-3 py-2.5 font-medium text-brand-700 hover:bg-brand-50">Sell on ACCS</Link>
           </div>
         </div>
       )}

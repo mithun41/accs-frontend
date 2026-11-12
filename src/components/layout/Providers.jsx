@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Toaster } from 'sonner';
 import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
+import { useWishlistStore } from '@/store/wishlist';
 import { authApi } from '@/lib/services';
 
 export default function Providers({ children }) {
@@ -18,6 +19,7 @@ export default function Providers({ children }) {
     useCartStore.getState().fetch();
     // Keep the cached user in sync with the backend (role / approval may change)
     if (useAuthStore.getState().accessToken) {
+      useWishlistStore.getState().load();
       authApi
         .me()
         .then((me) => useAuthStore.getState().setUser(me))

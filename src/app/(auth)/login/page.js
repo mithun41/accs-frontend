@@ -193,6 +193,7 @@ function LoginForm() {
         open={verifyOpen}
         onClose={() => setVerifyOpen(false)}
         phone={normalizePhone(phone)}
+        sendCode={authApi.loginOtp}
         onVerified={async (res) => {
           setVerifyOpen(false);
           if (res?.data?.access_token) {

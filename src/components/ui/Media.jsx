@@ -14,12 +14,12 @@ const PLACEHOLDER_TONES = [
 ];
 
 /** Product / shop image with a tasteful placeholder when no image exists. */
-export function Thumb({ src, alt = '', seed = 0, icon: Icon = Package, className, rounded = 'rounded-lg' }) {
+export function Thumb({ src, alt = '', seed = 0, icon: Icon = Package, className, rounded = 'rounded-lg', fit = 'cover' }) {
   const [failed, setFailed] = useState(false);
   const url = src ? mediaUrl(src) : null;
   if (url && !failed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={alt} onError={() => setFailed(true)} className={cn('object-cover bg-slate-100', rounded, className)} />;
+    return <img src={url} alt={alt} onError={() => setFailed(true)} className={cn(fit === 'contain' ? 'object-contain' : 'object-cover', 'bg-slate-100', rounded, className)} />;
   }
   const tone = PLACEHOLDER_TONES[Math.abs(Number(seed) || 0) % PLACEHOLDER_TONES.length];
   return (

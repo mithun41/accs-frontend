@@ -1,19 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { Package, Clock, AlertTriangle, ShoppingBag, Wallet, TrendingUp, Star, PlusCircle, ArrowRight } from 'lucide-react';
+import { Package, Clock, AlertTriangle, ShoppingBag, Wallet, TrendingUp, Star, PlusCircle, ArrowRight, Store } from 'lucide-react';
 import { catalogApi, shopApi, vendorOrderApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { useVendor } from '@/components/vendor/VendorContext';
-import { formatDate, formatPrice, humanize, primaryImage, toList } from '@/lib/utils';
-import { PageHeader, Section, StatCard } from '@/components/ui/Layout';
+import { formatDate, formatPrice, primaryImage, toList } from '@/lib/utils';
+import { BannerAction, Section, StatCard, WelcomeBanner } from '@/components/ui/Layout';
+import { DonutChart } from '@/components/ui/Charts';
 import { StatusBadge } from '@/components/ui/Badge';
 import { PageLoader, EmptyState } from '@/components/ui/Feedback';
 import { Thumb, Stars } from '@/components/ui/Media';
 import Button from '@/components/ui/Button';
 import DataTable from '@/components/ui/Table';
 
-const PIPELINE = ['PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED'];
 
 export default function VendorDashboard() {
   const { shop } = useVendor();
@@ -28,10 +28,16 @@ export default function VendorDashboard() {
 
   return (
     <>
-      <PageHeader
+      <WelcomeBanner
+        icon={Store}
         title={`Welcome back, ${shop?.shop_name}`}
-        description="Here's what's happening with your shop today."
-        actions={<Button href="/vendor/products/new" icon={PlusCircle}>Add product</Button>}
+        subtitle={`${byStatus.PROCESSING || 0} orders to process · ${s.products?.pending || 0} books in review · rating ${Number(s.shop?.average_rating || 0).toFixed(1)}`}
+        actions={
+          <>
+            <BannerAction href="/vendor/products/new" icon={PlusCircle} primary>Add book</BannerAction>
+            <BannerAction href="/vendor/orders?status=PROCESSING" icon={ShoppingBag}>Process orders</BannerAction>
+          </>
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -73,23 +79,17 @@ export default function VendorDashboard() {
 
         <div className="space-y-6">
           <Section title="Order pipeline">
-            <div className="space-y-3">
-              {PIPELINE.map((st) => {
-                const n = byStatus[st] || 0;
-                const pct = totalOrders ? Math.round((n / totalOrders) * 100) : 0;
-                return (
-                  <div key={st}>
-                    <div className="mb-1 flex justify-between text-sm">
-                      <span className="text-slate-600">{humanize(st)}</span>
-                      <span className="font-medium text-slate-900">{n}</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-brand-500" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <DonutChart
+              size={150}
+              centerLabel="orders"
+              segments={[
+                { label: 'Processing', value: byStatus.PROCESSING || 0, color: '#0ea5e9' },
+                { label: 'Packed', value: byStatus.PACKED || 0, color: '#8b5cf6' },
+                { label: 'Shipped', value: byStatus.SHIPPED || 0, color: '#f59e0b' },
+                { label: 'Delivered', value: byStatus.DELIVERED || 0, color: '#10b981' },
+                { label: 'Cancelled / returned', value: (byStatus.CANCELLED || 0) + (byStatus.RETURNED || 0), color: '#ef4444' },
+              ]}
+            />
           </Section>
 
           <Section title="Shop rating">

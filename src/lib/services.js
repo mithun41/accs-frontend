@@ -46,6 +46,8 @@ export const catalogApi = {
 
   products: (params) => get('/products/products', params),
   product: (id) => get(`/products/products/${id}`),
+  facets: (params) => get('/products/products/facets', params),
+  homeSections: (limit = 5) => get('/products/products/home-sections', { limit }),
   myProducts: (params) => get('/products/products/my-products', params),
   lowStock: (params) => get('/products/products/low-stock', params),
   pendingProducts: () => get('/products/products/pending'),
@@ -185,4 +187,41 @@ export const adminApi = {
   broadcasts: (params) => get('/admin/broadcast/', params),
   createBroadcast: (data) => post('/admin/broadcast/', data),
   deleteBroadcast: (id) => del(`/admin/broadcast/${id}/`),
+};
+
+/* ---------------- Marketing: banners, landing pages, coupons ---------------- */
+export const marketingApi = {
+  banners: () => get('/marketing/banners/'),
+  allBanners: () => get('/marketing/banners/', { all: 1 }),
+  createBanner: (data) => post('/marketing/banners/', toFormData(data), multipart),
+  updateBanner: (id, data) => patch(`/marketing/banners/${id}/`, data instanceof FormData ? data : toFormData(data), multipart),
+  deleteBanner: (id) => del(`/marketing/banners/${id}/`),
+
+  landingPages: (params) => get('/marketing/landing-pages/', params),
+  landingPage: (id) => get(`/marketing/landing-pages/${id}/`),
+  createLandingPage: (data) => post('/marketing/landing-pages/', toFormData(data), multipart),
+  updateLandingPage: (id, data) => patch(`/marketing/landing-pages/${id}/`, toFormData(data), multipart),
+  deleteLandingPage: (id) => del(`/marketing/landing-pages/${id}/`),
+  publicLanding: (slug) => get(`/marketing/landing/${slug}/`),
+  landingOrder: (slug, data) => post(`/marketing/landing/${slug}/order/`, data),
+
+  coupons: (params) => get('/marketing/coupons/', params),
+  createCoupon: (data) => post('/marketing/coupons/', data),
+  updateCoupon: (id, data) => patch(`/marketing/coupons/${id}/`, data),
+  deleteCoupon: (id) => del(`/marketing/coupons/${id}/`),
+  validateCoupon: (code, subtotal) => post('/marketing/coupons/validate/', { code, subtotal }),
+};
+
+/* ---------------- Wishlist & book reviews ---------------- */
+export const wishlistApi = {
+  list: () => get('/products/wishlist'),
+  add: (product_id) => post('/products/wishlist', { product_id }),
+  remove: (product_id) => del(`/products/wishlist?product_id=${product_id}`),
+};
+
+export const reviewApi = {
+  list: (product) => get('/products/reviews', { product, page_size: 50 }),
+  eligibility: (product) => get('/products/reviews/eligibility', { product }),
+  create: (data) => post('/products/reviews', data),
+  remove: (id) => del(`/products/reviews/${id}`),
 };

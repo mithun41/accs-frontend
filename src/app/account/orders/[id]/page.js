@@ -3,7 +3,7 @@
 import { Suspense, use, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, MapPin, Phone, Truck, Store, XCircle, Radar, Receipt } from 'lucide-react';
+import { CheckCircle2, MapPin, Phone, Truck, Store, XCircle, Radar, Receipt, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { orderApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
@@ -70,6 +70,7 @@ function OrderDetail({ id }) {
         description={`Placed on ${formatDate(order.created_at, true)}`}
         actions={
           <>
+            <Button variant="secondary" icon={Printer} href={`/invoice/${order.id}`} target="_blank">Invoice</Button>
             {order.pathao_consignment_id && <Button variant="secondary" icon={Radar} loading={trackLoading} onClick={track}>Track parcel</Button>}
             {canCancel && <Button variant="danger-outline" icon={XCircle} onClick={() => setCancelOpen(true)}>Cancel order</Button>}
           </>
@@ -120,6 +121,9 @@ function OrderDetail({ id }) {
             <dl className="space-y-2.5 text-sm">
               <div className="flex justify-between"><dt className="text-slate-500">Subtotal</dt><dd>{formatPrice(order.total_amount)}</dd></div>
               <div className="flex justify-between"><dt className="text-slate-500">Delivery</dt><dd>{formatPrice(order.total_delivery_charge)}</dd></div>
+              {Number(order.discount_amount) > 0 && (
+                <div className="flex justify-between text-emerald-700"><dt>Coupon {order.coupon_code}</dt><dd>−{formatPrice(order.discount_amount)}</dd></div>
+              )}
               <div className="flex justify-between border-t border-slate-100 pt-2.5 text-base font-semibold"><dt>Total</dt><dd>{formatPrice(order.grand_total)}</dd></div>
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">

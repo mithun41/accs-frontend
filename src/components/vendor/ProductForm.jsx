@@ -24,12 +24,14 @@ const toIso = (local) => (local ? new Date(local).toISOString() : '');
 function initialForm(product) {
   if (!product) {
     return {
-      title: '', category: '', description: '', size: '', price: '', stock_quantity: '', low_stock_threshold: '5', moq: '1',
+      title: '', author: '', publisher: '', category: '', description: '', size: '', price: '', stock_quantity: '', low_stock_threshold: '5', moq: '1',
       discount_type: 'NONE', discount_value: '', discount_start_date: '', discount_end_date: '', is_active: true,
     };
   }
   return {
     title: product.title || '',
+    author: product.author || '',
+    publisher: product.publisher || '',
     category: product.category || '',
     description: product.description || '',
     size: product.size || '',
@@ -141,29 +143,37 @@ export default function ProductForm({ product, onSaved, backHref = '/vendor/prod
             {product.rejection_reason || 'No reason provided.'} Saving your changes will send it back for review.
           </Alert>
         )}
-        <Section title="Product details">
+        <Section title="Book details">
           <div className="space-y-4">
-            <Field label="Title" required error={errors.title}>
-              <Input value={form.title} onChange={set('title')} error={errors.title} placeholder="e.g. Men's Cotton Panjabi" />
+            <Field label="Book title" required error={errors.title}>
+              <Input value={form.title} onChange={set('title')} error={errors.title} placeholder="e.g. Mathematics Guide — Class 8" />
             </Field>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Category" required error={errors.category}>
+              <Field label="Author" error={errors.author}>
+                <Input value={form.author} onChange={set('author')} placeholder="Writer's name" />
+              </Field>
+              <Field label="Publisher" error={errors.publisher}>
+                <Input value={form.publisher} onChange={set('publisher')} placeholder="Prokashoni / publisher" />
+              </Field>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Class / subject" required error={errors.category}>
                 <Select value={form.category} onChange={set('category')} error={errors.category}>
-                  <option value="">Select a category</option>
+                  <option value="">Select class and subject</option>
                   {toList(tree.data).map((c) => (
                     <optgroup key={c.id} label={c.name}>
-                      <option value={c.id}>{c.name} (general)</option>
+                      <option value={c.id}>{c.name} — all subjects</option>
                       {c.subcategories?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </optgroup>
                   ))}
                 </Select>
               </Field>
-              <Field label="Size / variant" hint="e.g. M, L, 42, 1kg" error={errors.size}>
+              <Field label="Edition" hint="e.g. 2026 edition, Bangla version" error={errors.size}>
                 <Input value={form.size} onChange={set('size')} />
               </Field>
             </div>
             <Field label="Description" error={errors.description}>
-              <Textarea rows={6} value={form.description} onChange={set('description')} placeholder="Material, features, what's in the box…" />
+              <Textarea rows={6} value={form.description} onChange={set('description')} placeholder="Chapters covered, curriculum, what makes this book useful…" />
             </Field>
           </div>
         </Section>

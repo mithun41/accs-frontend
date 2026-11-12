@@ -3,7 +3,7 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import {
-  CheckCircle2, XCircle, Truck, Radar, PackageCheck, RotateCcw, MapPin, Phone, User, Store, Warehouse,
+  CheckCircle2, XCircle, Truck, Radar, PackageCheck, RotateCcw, MapPin, Phone, User, Store, Warehouse, Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminApi, shopApi } from '@/lib/services';
@@ -192,12 +192,13 @@ export default function AdminOrderDetailPage({ params }) {
             {order.order_number} <StatusBadge status={order.status} />
           </span>
         }
-        description={`Placed ${formatDate(order.created_at, true)} by ${order.buyer_name || order.contact_phone}`}
+        description={`Placed ${formatDate(order.created_at, true)} by ${order.buyer_name || order.contact_phone}${order.source === 'LANDING' ? ' · via landing page' : ''}${order.customer_note ? ` · Note: ${order.customer_note}` : ''}`}
         actions={
           <>
             {pending && <Button variant="danger-outline" icon={XCircle} onClick={() => setModal('reject')}>Reject</Button>}
             {pending && <Button icon={CheckCircle2} onClick={() => setModal('approve')}>Approve</Button>}
             {approved && !order.pathao_consignment_id && <Button icon={Truck} onClick={() => setModal('dispatch')}>Dispatch to Pathao</Button>}
+            <Button variant="secondary" icon={Printer} href={`/invoice/${order.id}`} target="_blank">Invoice</Button>
             {order.pathao_consignment_id && <Button variant="secondary" icon={Radar} loading={busy && !modal} onClick={track}>Track</Button>}
             {approved && order.pathao_consignment_id && !delivered && (
               <Button variant="secondary" icon={PackageCheck} onClick={() => setModal('deliver')}>Mark delivered</Button>
@@ -236,6 +237,9 @@ export default function AdminOrderDetailPage({ params }) {
               {(order.delivery_charge_breakdown || []).map((b, i) => (
                 <div key={i} className="flex justify-between"><dt className="text-slate-500">Delivery · {b.shop_name || b.source}</dt><dd>{formatPrice(b.delivery_charge)}</dd></div>
               ))}
+              {Number(order.discount_amount) > 0 && (
+                <div className="flex justify-between text-emerald-700"><dt>Coupon {order.coupon_code}</dt><dd>−{formatPrice(order.discount_amount)}</dd></div>
+              )}
               <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-semibold"><dt>Grand total</dt><dd>{formatPrice(order.grand_total)}</dd></div>
             </dl>
           </Section>

@@ -21,35 +21,77 @@ export function PageHeader({ title, description, actions, back, className }) {
   );
 }
 
+const STAT_TONES = {
+  brand: 'from-brand-500 to-brand-700 shadow-brand-500/30',
+  blue: 'from-sky-500 to-blue-600 shadow-sky-500/30',
+  green: 'from-emerald-500 to-teal-600 shadow-emerald-500/30',
+  yellow: 'from-amber-400 to-orange-500 shadow-amber-500/30',
+  red: 'from-rose-500 to-red-600 shadow-rose-500/30',
+  purple: 'from-violet-500 to-purple-600 shadow-violet-500/30',
+  gray: 'from-slate-500 to-slate-700 shadow-slate-500/30',
+};
+
 export function StatCard({ label, value, icon: Icon, tone = 'brand', hint, href }) {
-  const tones = {
-    brand: 'bg-brand-50 text-brand-600',
-    blue: 'bg-sky-50 text-sky-600',
-    green: 'bg-emerald-50 text-emerald-600',
-    yellow: 'bg-amber-50 text-amber-600',
-    red: 'bg-red-50 text-red-600',
-    purple: 'bg-violet-50 text-violet-600',
-    gray: 'bg-slate-100 text-slate-600',
-  };
+  const gradient = STAT_TONES[tone] || STAT_TONES.brand;
   const body = (
-    <div className={cn('card p-5 h-full', href && 'transition-shadow hover:shadow-lift')}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={cn('card relative h-full overflow-hidden p-5', href && 'transition-all hover:-translate-y-0.5 hover:shadow-lift')}>
+      <div className={cn('pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-gradient-to-br opacity-[0.08]', gradient)} />
+      <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 truncate">
+          <p className="text-[13px] font-medium text-slate-500">{label}</p>
+          <p className="mt-2 truncate text-[26px] font-bold leading-none tracking-tight text-slate-900">
             {typeof value === 'number' ? formatNumber(value) : value}
           </p>
         </div>
         {Icon && (
-          <div className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', tones[tone])}>
+          <div className={cn('flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg', gradient)}>
             <Icon className="size-5" />
           </div>
         )}
       </div>
-      {hint && <p className="mt-3 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="relative mt-4 text-xs text-slate-500">{hint}</p>}
     </div>
   );
   return href ? <Link href={href}>{body}</Link> : body;
+}
+
+/** Gradient greeting card shown at the top of dashboards. */
+export function WelcomeBanner({ title, subtitle, actions, icon: Icon, className }) {
+  return (
+    <section className={cn('relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-600 to-brand-800 px-6 py-7 text-white shadow-lg shadow-brand-600/20 sm:px-8', className)}>
+      <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-white/10" />
+      <div className="pointer-events-none absolute -bottom-24 right-32 size-56 rounded-full bg-white/5" />
+      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          {Icon && (
+            <span className="hidden size-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/25 sm:flex">
+              <Icon className="size-7" />
+            </span>
+          )}
+          <div>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
+            {subtitle && <p className="mt-1 text-sm text-white/85">{subtitle}</p>}
+          </div>
+        </div>
+        {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      </div>
+    </section>
+  );
+}
+
+/** Button styled for use on top of WelcomeBanner. */
+export function BannerAction({ href, icon: Icon, children, primary = false }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-sm font-semibold transition-colors',
+        primary ? 'bg-white text-brand-700 shadow hover:bg-brand-50' : 'bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25'
+      )}
+    >
+      {Icon && <Icon className="size-4" />} {children}
+    </Link>
+  );
 }
 
 export function Section({ title, description, actions, children, className, bodyClassName }) {

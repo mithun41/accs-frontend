@@ -9,7 +9,7 @@ export function orderProgress(order) {
   if (status === 'CANCELLED') return { step: 0, label: 'Cancelled', tone: 'red', terminal: 'CANCELLED' };
   if (status === 'RETURNED' || pathao === 'returned') return { step: 0, label: 'Returned', tone: 'orange', terminal: 'RETURNED' };
 
-  const delivered = pathao === 'delivered' || (vendorStatuses.length > 0 && vendorStatuses.every((s) => s === 'DELIVERED'));
+  const delivered = status === 'DELIVERED' || pathao === 'delivered' || (vendorStatuses.length > 0 && vendorStatuses.every((s) => s === 'DELIVERED'));
   if (delivered) return { step: 4, label: 'Delivered', tone: 'green', terminal: null };
 
   const shipped = Boolean(order.pathao_consignment_id) || vendorStatuses.some((s) => s === 'SHIPPED') || pathao === 'in_transit';
@@ -29,6 +29,7 @@ export const ORDER_STATUS_OPTIONS = [
   { value: '', label: 'All orders' },
   { value: 'PENDING_ADMIN_APPROVAL', label: 'Pending approval' },
   { value: 'APPROVED', label: 'Approved' },
+  { value: 'DELIVERED', label: 'Delivered' },
   { value: 'REJECTED', label: 'Rejected' },
   { value: 'CANCELLED', label: 'Cancelled' },
   { value: 'RETURNED', label: 'Returned' },

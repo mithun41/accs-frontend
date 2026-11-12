@@ -29,14 +29,14 @@ export default function SiteFooter() {
         <div className="col-span-2 md:col-span-1">
           <Logo />
           <p className="mt-3 text-sm text-slate-500 max-w-xs">
-            A trusted multi-vendor marketplace connecting buyers with retailers and wholesalers across Bangladesh.
+            Your online school book shop — textbooks, guides and model tests for Class 1 to 12 from trusted book sellers across Bangladesh.
           </p>
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-900">Shop</p>
           <ul className="mt-3 space-y-2 text-sm text-slate-500">
-            <li><Link href="/products" className="hover:text-slate-900">All products</Link></li>
-            <li><Link href="/shops" className="hover:text-slate-900">Shops</Link></li>
+            <li><Link href="/products" className="hover:text-slate-900">All books</Link></li>
+            <li><Link href="/shops" className="hover:text-slate-900">Book shops</Link></li>
             <li><Link href="/cart" className="hover:text-slate-900">Cart</Link></li>
             <li><Link href="/account/orders" className="hover:text-slate-900">Track orders</Link></li>
           </ul>

@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, User, MapPin, Settings, Store, PlusCircle, ShoppingBag, Wallet, Star,
-  FolderTree, Users, UserCog, Percent, Megaphone, SlidersHorizontal, Boxes,
+  FolderTree, Users, UserCog, Percent, Megaphone, SlidersHorizontal, Boxes, Heart, Images, LayoutTemplate, Ticket,
 } from 'lucide-react';
 import { isAdmin, isVendor } from './utils';
 
@@ -16,6 +16,7 @@ const NAV = [
     items: [
       { href: '/account', label: 'Dashboard', icon: LayoutDashboard, exact: true },
       { href: '/account/orders', label: 'My orders', icon: Package },
+      { href: '/account/wishlist', label: 'Wishlist', icon: Heart },
       { href: '/account/profile', label: 'My profile', icon: User },
       { href: '/account/address', label: 'Delivery address', icon: MapPin },
       { href: '/account/settings', label: 'Settings', icon: Settings },
@@ -49,6 +50,15 @@ const NAV = [
       { href: '/admin/commissions', label: 'Commissions', icon: Percent, perms: ['view_ordercommission', 'change_ordercommission'] },
       { href: '/admin/broadcasts', label: 'Announcements', icon: Megaphone, perms: ['view_broadcastannouncement', 'add_broadcastannouncement'] },
       { href: '/admin/settings', label: 'Settings', icon: Settings, perms: ['change_deliverycharge', 'change_policy', 'change_city'] },
+    ],
+  },
+  {
+    section: 'Marketing',
+    when: (s) => s.isAdmin,
+    items: [
+      { href: '/admin/banners', label: 'Banners', icon: Images, perms: ['view_banner', 'change_banner'] },
+      { href: '/admin/landing-pages', label: 'Landing pages', icon: LayoutTemplate, perms: ['view_landingpage', 'change_landingpage'] },
+      { href: '/admin/coupons', label: 'Coupons', icon: Ticket, perms: ['view_coupon', 'change_coupon'] },
     ],
   },
 ];
