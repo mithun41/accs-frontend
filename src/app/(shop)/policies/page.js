@@ -5,19 +5,21 @@ import { coreApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { formatDate, toList } from '@/lib/utils';
 import { EmptyState, PageLoader } from '@/components/ui/Feedback';
+import { useT } from '@/i18n/LanguageProvider';
 
 export default function PoliciesPage() {
+  const t = useT();
   const { data, loading } = useFetch(() => coreApi.policies(), []);
   const policies = toList(data);
 
   return (
     <div className="container-page max-w-4xl py-10">
-      <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Policies</h1>
-      <p className="mt-2 text-slate-500">The rules that keep ACCS fair and safe for buyers and sellers.</p>
+      <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t('Policies')}</h1>
+      <p className="mt-2 text-slate-500">{t('How ordering, delivery, returns and privacy work at ACCS.')}</p>
       {loading ? (
         <PageLoader />
       ) : policies.length === 0 ? (
-        <div className="card mt-8"><EmptyState icon={FileText} title="No policies published yet" /></div>
+        <div className="card mt-8"><EmptyState icon={FileText} title={t('No policies published yet')} /></div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-[200px_minmax(0,1fr)]">
           <nav className="hidden md:block">
@@ -31,7 +33,7 @@ export default function PoliciesPage() {
             {policies.map((p) => (
               <article key={p.id} id={`policy-${p.id}`} className="card scroll-mt-36 p-8">
                 <h2 className="text-xl font-semibold text-slate-900">{p.title}</h2>
-                <p className="mt-1 text-xs text-slate-400">Last updated {formatDate(p.updated_at)}</p>
+                <p className="mt-1 text-xs text-slate-400">{t('Last updated {date}', { date: formatDate(p.updated_at) })}</p>
                 <p className="mt-4 whitespace-pre-line leading-relaxed text-slate-600">{p.description}</p>
               </article>
             ))}

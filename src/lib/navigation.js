@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Package, User, MapPin, Settings, Store, PlusCircle, ShoppingBag, Wallet, Star,
-  FolderTree, Users, UserCog, Percent, Megaphone, SlidersHorizontal, Boxes, Heart, Images, LayoutTemplate, Ticket,
+  FolderTree, Users, UserCog, Percent, BarChart3, Megaphone, SlidersHorizontal, Boxes, Heart, Images, LayoutTemplate, Ticket, MessageCircle,
 } from 'lucide-react';
 import { isAdmin, isVendor } from './utils';
 
@@ -40,8 +40,10 @@ const NAV = [
     when: (s) => s.isAdmin,
     items: [
       { href: '/admin', label: 'Analytics', icon: LayoutDashboard, exact: true },
+      { href: '/admin/reports', label: 'Reports', icon: BarChart3, perms: ['view_ledgerentry', 'change_ledgerentry'] },
       { href: '/admin/orders', label: 'Orders', icon: ShoppingBag, perms: ['view_order', 'change_order'] },
       { href: '/admin/products', label: 'Products', icon: Package, perms: ['view_product', 'change_product'] },
+      { href: '/admin/products/new', label: 'Add product', icon: PlusCircle, exact: true, perms: ['add_product'] },
       { href: '/admin/categories', label: 'Categories', icon: FolderTree, perms: ['view_category', 'change_category'] },
       { href: '/admin/shops', label: 'Shops & ratings', icon: Store, perms: ['view_shopprofile', 'change_shopprofile'] },
       { href: '/admin/users', label: 'Users & KYC', icon: Users, perms: ['view_user', 'change_user'] },
@@ -59,6 +61,7 @@ const NAV = [
       { href: '/admin/banners', label: 'Banners', icon: Images, perms: ['view_banner', 'change_banner'] },
       { href: '/admin/landing-pages', label: 'Landing pages', icon: LayoutTemplate, perms: ['view_landingpage', 'change_landingpage'] },
       { href: '/admin/coupons', label: 'Coupons', icon: Ticket, perms: ['view_coupon', 'change_coupon'] },
+      { href: '/admin/store-contact', label: 'WhatsApp & contact', icon: MessageCircle, perms: ['view_sitesettings', 'change_sitesettings'] },
     ],
   },
 ];

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {
-  Users, Store, ShoppingBag, Percent, Package, AlertTriangle, ArrowRight, Clock, UserCheck, LayoutDashboard, Images, LayoutTemplate, CheckCircle2,
+  Users, Store, ShoppingBag, Percent, Package, AlertTriangle, ArrowRight, Clock, UserCheck, LayoutDashboard, Images, LayoutTemplate, CheckCircle2, BarChart3,
 } from 'lucide-react';
 import { adminApi, catalogApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
@@ -55,6 +55,7 @@ export default function AdminDashboard() {
         actions={
           <>
             <BannerAction href="/admin/orders?status=PENDING_ADMIN_APPROVAL" icon={Clock} primary>Review orders</BannerAction>
+            <BannerAction href="/admin/reports" icon={BarChart3}>Reports</BannerAction>
             <BannerAction href="/admin/banners" icon={Images}>Banners</BannerAction>
             <BannerAction href="/admin/landing-pages/new" icon={LayoutTemplate}>New landing page</BannerAction>
           </>

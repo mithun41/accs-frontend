@@ -1,5 +1,7 @@
 'use client';
 
+import { useT } from '@/i18n/LanguageProvider';
+
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -39,6 +41,7 @@ export function Select({ className, error, children, ...props }) {
 }
 
 export function PasswordInput({ className, error, ...props }) {
+  const t = useT();
   const [show, setShow] = useState(false);
   return (
     <div className="relative">
@@ -52,7 +55,7 @@ export function PasswordInput({ className, error, ...props }) {
         tabIndex={-1}
         onClick={() => setShow((s) => !s)}
         className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-slate-400 hover:text-slate-600"
-        aria-label={show ? 'Hide password' : 'Show password'}
+        aria-label={show ? t('Hide password') : t('Show password')}
       >
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>

@@ -12,7 +12,7 @@ import { Section } from '@/components/ui/Layout';
 import { Spinner } from '@/components/ui/Feedback';
 import Button from '@/components/ui/Button';
 
-const THEMES = ['#df3b3b', '#1565c0', '#2e7d32', '#6a1b9a', '#ef6c00', '#00838f', '#37474f'];
+const THEMES = ['#cc0066', '#e06c07', '#1565c0', '#127d6a', '#6a1b9a', '#2e7d32', '#37474f'];
 const toLocal = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
@@ -84,7 +84,7 @@ export default function LandingPageEditor({ page, onSaved }) {
     headline: page?.headline || '',
     description: page?.description || '',
     cta_text: page?.cta_text || 'Order now',
-    theme_color: page?.theme_color || '#df3b3b',
+    theme_color: page?.theme_color || '#cc0066',
     is_active: page ? page.is_active : true,
     starts_at: toLocal(page?.starts_at),
     ends_at: toLocal(page?.ends_at),

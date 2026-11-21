@@ -1,16 +1,19 @@
 'use client';
 
+import { useT } from '@/i18n/LanguageProvider';
+
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { cn, formatNumber } from '@/lib/utils';
 
 export function PageHeader({ title, description, actions, back, className }) {
+  const t = useT();
   return (
     <div className={cn('mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
         {back && (
           <Link href={back.href} className="mb-2 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-            <ChevronLeft className="size-4" /> {back.label}
+            <ChevronLeft className="size-4" /> {t(back.label)}
           </Link>
         )}
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
@@ -58,8 +61,8 @@ export function StatCard({ label, value, icon: Icon, tone = 'brand', hint, href 
 /** Gradient greeting card shown at the top of dashboards. */
 export function WelcomeBanner({ title, subtitle, actions, icon: Icon, className }) {
   return (
-    <section className={cn('relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-600 to-brand-800 px-6 py-7 text-white shadow-lg shadow-brand-600/20 sm:px-8', className)}>
-      <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-white/10" />
+    <section className={cn('relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 via-brand-700 to-brand-900 px-6 py-7 text-white shadow-lg shadow-brand-600/20 sm:px-8', className)}>
+      <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-accent-400/20" />
       <div className="pointer-events-none absolute -bottom-24 right-32 size-56 rounded-full bg-white/5" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
@@ -112,6 +115,7 @@ export function Section({ title, description, actions, children, className, body
 }
 
 export function Tabs({ tabs, value, onChange, className }) {
+  const t = useT();
   return (
     <div className={cn('flex gap-1 overflow-x-auto scrollbar-none border-b border-slate-200', className)}>
       {tabs.map((tab) => {
@@ -125,7 +129,7 @@ export function Tabs({ tabs, value, onChange, className }) {
               active ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'
             )}
           >
-            {tab.label}
+            {t(tab.label)}
             {tab.count !== undefined && tab.count !== null && (
               <span
                 className={cn(
@@ -144,6 +148,7 @@ export function Tabs({ tabs, value, onChange, className }) {
 }
 
 export function Pagination({ meta, page, onPageChange, className }) {
+  const t = useT();
   if (!meta || meta.total_pages <= 1) return null;
   const total = meta.total_pages;
   const current = page || meta.current_page;
@@ -157,14 +162,13 @@ export function Pagination({ meta, page, onPageChange, className }) {
   return (
     <div className={cn('flex flex-col sm:flex-row items-center justify-between gap-3 pt-4', className)}>
       <p className="text-sm text-slate-500">
-        Page <span className="font-medium text-slate-700">{current}</span> of{' '}
-        <span className="font-medium text-slate-700">{total}</span> · {formatNumber(meta.count)} results
+        {t('Page {current} of {total} · {count} results', { current, total, count: formatNumber(meta.count) })}
       </p>
       <div className="flex items-center gap-1">
-        <button className={btn} disabled={current <= 1} onClick={() => onPageChange(1)} aria-label="First page">
+        <button className={btn} disabled={current <= 1} onClick={() => onPageChange(1)} aria-label={t('First page')}>
           <ChevronsLeft className="size-4" />
         </button>
-        <button className={btn} disabled={current <= 1} onClick={() => onPageChange(current - 1)} aria-label="Previous page">
+        <button className={btn} disabled={current <= 1} onClick={() => onPageChange(current - 1)} aria-label={t('Previous page')}>
           <ChevronLeft className="size-4" />
         </button>
         {pages.map((p) => (
@@ -176,10 +180,10 @@ export function Pagination({ meta, page, onPageChange, className }) {
             {p}
           </button>
         ))}
-        <button className={btn} disabled={current >= total} onClick={() => onPageChange(current + 1)} aria-label="Next page">
+        <button className={btn} disabled={current >= total} onClick={() => onPageChange(current + 1)} aria-label={t('Next page')}>
           <ChevronRight className="size-4" />
         </button>
-        <button className={btn} disabled={current >= total} onClick={() => onPageChange(total)} aria-label="Last page">
+        <button className={btn} disabled={current >= total} onClick={() => onPageChange(total)} aria-label={t('Last page')}>
           <ChevronsRight className="size-4" />
         </button>
       </div>

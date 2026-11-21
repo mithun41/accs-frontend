@@ -10,9 +10,10 @@ const multipart = { headers: { 'Content-Type': 'multipart/form-data' } };
 
 /* ---------------- Auth & Account ---------------- */
 export const authApi = {
-  login: (phone_number, password) => post('/auth/login/', { phone_number, password }),
+  // otp_code: the SMS code super admins enter after their password
+  login: (phone_number, password, otp_code) => post('/auth/login/', { phone_number, password, ...(otp_code ? { otp_code } : {}) }),
   loginOtp: (phone_number) => post('/auth/login-otp/', { phone_number }),
-  adminLogin: (phone_number, password) => post('/admin/login/', { phone_number, password }),
+  adminLogin: (phone_number, password, otp_code) => post('/admin/login/', { phone_number, password, ...(otp_code ? { otp_code } : {}) }),
   logout: (refresh_token) => post('/auth/logout/', { refresh_token }),
 
   buyerRegister: (phone_number, full_name) => post('/auth/buyer/register/', { phone_number, full_name }),
@@ -184,6 +185,13 @@ export const adminApi = {
   deleteRole: (id) => del(`/admin/roles/${id}/`),
   permissions: () => get('/admin/permissions/'),
 
+  financeReport: (params) => get('/finance/reports/', params),
+  ledger: (params) => get('/finance/ledger/', params),
+  createLedgerEntry: (data) => post('/finance/ledger/', data),
+  deleteLedgerEntry: (id) => del(`/finance/ledger/${id}/`),
+  financeSettings: () => get('/finance/settings/'),
+  updateFinanceSettings: (data) => patch('/finance/settings/', data),
+
   broadcasts: (params) => get('/admin/broadcast/', params),
   createBroadcast: (data) => post('/admin/broadcast/', data),
   deleteBroadcast: (id) => del(`/admin/broadcast/${id}/`),
@@ -210,6 +218,9 @@ export const marketingApi = {
   updateCoupon: (id, data) => patch(`/marketing/coupons/${id}/`, data),
   deleteCoupon: (id) => del(`/marketing/coupons/${id}/`),
   validateCoupon: (code, subtotal) => post('/marketing/coupons/validate/', { code, subtotal }),
+
+  siteSettings: () => get('/marketing/site-settings/'),
+  updateSiteSettings: (data) => patch('/marketing/site-settings/', data),
 };
 
 /* ---------------- Wishlist & book reviews ---------------- */

@@ -3,20 +3,24 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MapPin, CreditCard, Banknote, ShieldCheck, Truck, Lock, Package, Tag } from 'lucide-react';
+import { MapPin, CreditCard, Banknote, ShieldCheck, Lock, Package, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import RequireAuth from '@/components/layout/RequireAuth';
 import LocationPicker from '@/components/address/LocationPicker';
 import { authApi, marketingApi, orderApi, pathaoApi } from '@/lib/services';
 import { useCartStore } from '@/store/cart';
 import { useSession } from '@/hooks/useSession';
-import { cn, formatPrice, getErrorMessage, isValidBDPhone, normalizePhone, primaryImage } from '@/lib/utils';
+import { cn, getErrorMessage, isValidBDPhone, normalizePhone } from '@/lib/utils';
 import { Field, Input, PhoneInput, Textarea, Checkbox } from '@/components/ui/Field';
-import { Thumb } from '@/components/ui/Media';
 import { EmptyState, PageLoader, Alert } from '@/components/ui/Feedback';
 import Button from '@/components/ui/Button';
+import CartItemRow from '@/components/cart/CartItemRow';
+import PriceBreakdown from '@/components/cart/PriceBreakdown';
+import { useLanguage, useT } from '@/i18n/LanguageProvider';
 
 function CheckoutView() {
+  const t = useT();
+  const { lang } = useLanguage();
   const router = useRouter();
   const { user } = useSession();
   const cart = useCartStore((s) => s.cart);
@@ -84,11 +88,11 @@ function CheckoutView() {
 
   const validate = () => {
     const e = {};
-    if (!form.full_name.trim()) e.full_name = 'Recipient name is required';
-    if (!isValidBDPhone(form.phone_number)) e.phone_number = 'Enter a valid Bangladeshi mobile number';
-    if (!location.city_id) e.city_id = 'Select a city';
-    if (!location.zone_id) e.zone_id = 'Select a zone';
-    if (form.address.trim().length < 5) e.address = 'Enter your full address (house, road, area)';
+    if (!form.full_name.trim()) e.full_name = t('Recipient name is required');
+    if (!isValidBDPhone(form.phone_number)) e.phone_number = t('Enter a valid Bangladeshi mobile number');
+    if (!location.city_id) e.city_id = t('Select a city');
+    if (!location.zone_id) e.zone_id = t('Select a zone');
+    if (form.address.trim().length < 5) e.address = t('Enter your full address (house, road, area)');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -104,9 +108,9 @@ function CheckoutView() {
       const res = await marketingApi.validateCoupon(code, subtotal);
       setCoupon({ code: res.code, discount: res.discount, description: res.description, forSubtotal: subtotal });
       setCouponInput('');
-      toast.success(res.description || 'Coupon applied');
+      toast.success(res.description || t('Coupon applied'));
     } catch (err) {
-      toast.error(getErrorMessage(err, 'This coupon cannot be used'));
+      toast.error(getErrorMessage(err, t('This coupon cannot be used')));
     } finally {
       setCouponLoading(false);
     }
@@ -114,7 +118,7 @@ function CheckoutView() {
 
   const placeOrder = async () => {
     if (!validate()) {
-      toast.error('Please complete your delivery details');
+      toast.error(t('Please complete your delivery details'));
       return;
     }
     setPlacing(true);
@@ -147,21 +151,21 @@ function CheckoutView() {
         coupon_code: coupon?.code || undefined,
       });
       await fetchCart();
-      toast.success('Order placed successfully!');
+      toast.success(t('Order placed successfully!'));
       router.replace(`/account/orders/${order.id}?placed=1`);
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Could not place your order'));
+      toast.error(getErrorMessage(err, t('Could not place your order')));
       setPlacing(false);
     }
   };
 
-  if (!loaded || !addressLoaded) return <PageLoader label="Preparing checkout…" />;
+  if (!loaded || !addressLoaded) return <PageLoader label={t('Preparing checkout…')} />;
 
   if (items.length === 0) {
     return (
       <div className="container-page py-12">
         <div className="card">
-          <EmptyState icon={Package} title="Your cart is empty" description="Add some products before checking out." action={<Button href="/products">Browse products</Button>} />
+          <EmptyState icon={Package} title={t('Your cart is empty')} description={t('Add some products before checking out.')} action={<Button href="/products">{t('Browse products')}</Button>} />
         </div>
       </div>
     );
@@ -172,44 +176,58 @@ function CheckoutView() {
   return (
     <div className="container-page py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Checkout</h1>
-        <p className="mt-1 text-sm text-slate-500">Confirm your delivery details and place your order</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{t('Checkout')}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t('Confirm your delivery details and place your order')}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
           <section className="card">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">1</span>
+                <h2 className="font-semibold text-slate-900 flex items-center gap-2"><Package className="size-4 text-slate-400" /> {t('Your items')} ({totalQty})</h2>
+              </div>
+              <Link href="/products" className="text-sm font-medium text-brand-700 hover:underline">{t('Add more')}</Link>
+            </div>
+            {/* Quantities can be changed or items removed right here */}
+            <ul className="divide-y divide-slate-100 px-6">
+              {items.map((item) => <CartItemRow key={item.id} item={item} compact />)}
+            </ul>
+          </section>
+
+          <section className="card">
             <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-              <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">1</span>
+              <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">2</span>
               <div>
-                <h2 className="font-semibold text-slate-900 flex items-center gap-2"><MapPin className="size-4 text-slate-400" /> Delivery address</h2>
+                <h2 className="font-semibold text-slate-900 flex items-center gap-2"><MapPin className="size-4 text-slate-400" /> {t('Delivery address')}</h2>
               </div>
             </div>
             <div className="space-y-4 p-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Recipient name" required error={errors.full_name}>
-                  <Input value={form.full_name} error={errors.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Full name" />
+                <Field label={t('Recipient name')} required error={errors.full_name}>
+                  <Input value={form.full_name} error={errors.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder={t('Full name')} />
                 </Field>
-                <Field label="Mobile number" required error={errors.phone_number}>
+                <Field label={t('Mobile number')} required error={errors.phone_number}>
                   <PhoneInput value={form.phone_number} error={errors.phone_number} onChange={(v) => setForm({ ...form, phone_number: v })} />
                 </Field>
               </div>
               <LocationPicker value={location} onChange={setLocation} errors={errors} />
-              <Field label="Full address" required error={errors.address} hint="House / flat no., road, landmark">
-                <Textarea rows={3} value={form.address} error={errors.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="e.g. House 12, Road 5, Dhanmondi" />
+              <Field label={t('Full address')} required error={errors.address} hint={t('House / flat no., road, landmark')}>
+                <Textarea rows={3} value={form.address} error={errors.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder={t('e.g. House 12, Road 5, Dhanmondi')} />
               </Field>
               <Checkbox
                 checked={saveAddress}
                 onChange={(e) => setSaveAddress(e.target.checked)}
-                label={savedAddress ? 'Update my saved delivery address' : 'Save this as my delivery address'}
+                label={savedAddress ? t('Update my saved delivery address') : t('Save this as my delivery address')}
               />
             </div>
           </section>
 
           <section className="card">
             <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
-              <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">2</span>
-              <h2 className="font-semibold text-slate-900 flex items-center gap-2"><CreditCard className="size-4 text-slate-400" /> Payment method</h2>
+              <span className="flex size-8 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">3</span>
+              <h2 className="font-semibold text-slate-900 flex items-center gap-2"><CreditCard className="size-4 text-slate-400" /> {t('Payment method')}</h2>
             </div>
             <div className="grid grid-cols-1 gap-3 p-6 sm:grid-cols-2">
               {[
@@ -231,8 +249,8 @@ function CheckoutView() {
                     {payment === opt.value && <span className="size-2 rounded-full bg-brand-600" />}
                   </span>
                   <span>
-                    <span className="flex items-center gap-2 font-medium text-slate-900"><opt.icon className="size-4 text-slate-500" /> {opt.title}</span>
-                    <span className="mt-0.5 block text-xs text-slate-500">{opt.text}</span>
+                    <span className="flex items-center gap-2 font-medium text-slate-900"><opt.icon className="size-4 text-slate-500" /> {t(opt.title)}</span>
+                    <span className="mt-0.5 block text-xs text-slate-500">{t(opt.text)}</span>
                   </span>
                 </button>
               ))}
@@ -243,63 +261,52 @@ function CheckoutView() {
         <aside className="lg:sticky lg:top-36 h-fit">
           <div className="card">
             <div className="border-b border-slate-100 px-6 py-4">
-              <h2 className="font-semibold text-slate-900">Order summary</h2>
+              <h2 className="font-semibold text-slate-900">{t('Order summary')}</h2>
             </div>
-            <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto px-6">
-              {items.map((item) => (
-                <li key={item.id} className="flex gap-3 py-3">
-                  <div className="relative">
-                    <Thumb src={primaryImage(item.product_details)} seed={item.product} className="size-14" />
-                    <span className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-slate-700 text-[10px] font-semibold text-white">{item.quantity}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-800 line-clamp-2">{item.product_details?.title}</p>
-                    <p className="text-xs text-slate-500">{item.product_details?.shop_details?.shop_name}</p>
-                  </div>
-                  <p className="text-sm font-medium text-slate-900">{formatPrice(item.subtotal_price)}</p>
-                </li>
-              ))}
-            </ul>
             <div className="border-t border-slate-100 px-6 py-4">
+              <PriceBreakdown
+                showItems
+                items={items}
+                coupon={activeCoupon}
+                deliveryKnown={!delivery.loading && deliveryFee !== null}
+                delivery={
+                  delivery.loading
+                    ? <span className="font-normal text-slate-400">{t('Calculating…')}</span>
+                    : deliveryFee !== null ? deliveryFee : <span className="font-normal text-slate-400">{t('Select location')}</span>
+                }
+              />
+            </div>
+            <div className="border-t border-slate-100 px-6 pt-4">
               {activeCoupon ? (
                 <div className="flex items-center justify-between rounded-lg border border-dashed border-emerald-300 bg-emerald-50 px-3 py-2 text-sm">
-                  <span className="flex items-center gap-2 text-emerald-800"><Tag className="size-4" /> <strong className="font-mono">{activeCoupon.code}</strong> applied</span>
-                  <button type="button" onClick={() => setCoupon(null)} className="text-xs font-medium text-slate-500 hover:text-red-600">Remove</button>
+                  <span className="flex items-center gap-2 text-emerald-800"><Tag className="size-4" /> <strong className="font-mono">{activeCoupon.code}</strong> {t('applied')}</span>
+                  <button type="button" onClick={() => setCoupon(null)} className="text-xs font-medium text-slate-500 hover:text-red-600">{t('Remove')}</button>
                 </div>
               ) : (
                 <form onSubmit={applyCoupon} className="flex gap-2">
-                  <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Coupon code" className="h-9 uppercase" />
-                  <Button type="submit" variant="secondary" size="sm" className="h-9" loading={couponLoading}>Apply</Button>
+                  <Input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={t('Coupon code')} className="h-9 uppercase" />
+                  <Button type="submit" variant="secondary" size="sm" className="h-9" loading={couponLoading}>{t('Apply')}</Button>
                 </form>
               )}
             </div>
-            <dl className="space-y-2.5 border-t border-slate-100 px-6 py-4 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-500">Subtotal</dt><dd className="font-medium">{formatPrice(subtotal)}</dd></div>
-              {activeCoupon && (
-                <div className="flex justify-between text-emerald-700"><dt>Coupon discount</dt><dd className="font-medium">−{formatPrice(activeCoupon.discount)}</dd></div>
-              )}
-              <div className="flex justify-between">
-                <dt className="text-slate-500 flex items-center gap-1.5"><Truck className="size-4" /> Delivery</dt>
-                <dd className="font-medium">
-                  {delivery.loading ? <span className="text-slate-400">Calculating…</span> : deliveryFee !== null ? formatPrice(deliveryFee) : <span className="text-slate-400">Select location</span>}
-                </dd>
-              </div>
-            </dl>
-            <div className="flex justify-between border-t border-slate-100 px-6 py-4">
-              <span className="font-semibold text-slate-900">Total</span>
-              <span className="text-xl font-semibold text-slate-900">{formatPrice(subtotal + (deliveryFee || 0) - (activeCoupon ? Number(activeCoupon.discount) : 0))}</span>
-            </div>
-            <div className="px-6 pb-6">
+            <div className="px-6 pb-6 pt-3">
               <Button size="lg" className="w-full" icon={Lock} loading={placing} onClick={placeOrder}>
-                Place order
+                {t('Place order')}
               </Button>
               <p className="mt-3 text-center text-xs text-slate-500">
-                By placing your order you agree to our <Link href="/policies" className="link">policies</Link>.
+                {lang === 'bn' ? (
+                  <>অর্ডার করে আপনি আমাদের <Link href="/policies" className="link">নীতিমালায়</Link> সম্মত হচ্ছেন।</>
+                ) : (
+                  <>By placing your order you agree to our <Link href="/policies" className="link">policies</Link>.</>
+                )}
               </p>
+              <Link href="/products" className="mt-3 block text-center text-sm font-semibold text-brand-700 hover:underline">
+                + {t('Buy more products')}
+              </Link>
             </div>
           </div>
           <Alert tone="info" icon={ShieldCheck} className="mt-4">
-            Your order is reviewed by our team before it is sent to the seller. Delivery fee is confirmed at approval.
+            {t('Our team confirms your order before it is packed and shipped. Delivery fee is confirmed at approval.')}
           </Alert>
         </aside>
       </div>

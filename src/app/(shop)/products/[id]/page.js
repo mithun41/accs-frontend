@@ -3,18 +3,21 @@
 import { use, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, ShoppingCart, Zap, Store, MapPin, ShieldCheck, Truck, RotateCcw, Package, Clock, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react';
+import { ChevronRight, ShoppingCart, Zap, ShieldCheck, Truck, RotateCcw, Package, Clock, CheckCircle2, AlertTriangle, BookOpen } from 'lucide-react';
 import { catalogApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
 import { cn, formatDate, mediaUrl, toList } from '@/lib/utils';
-import { PriceTag, ProductGrid, useAddToCart } from '@/components/product/ProductCard';
-import { ShopLogo, Stars, Thumb } from '@/components/ui/Media';
+import { productKind } from '@/lib/catalog';
+import { PriceTag, ProductGrid, PublisherTag, useAddToCart, useCheckoutHref } from '@/components/product/ProductCard';
+import { Stars, Thumb } from '@/components/ui/Media';
 import { ErrorState, PageLoader } from '@/components/ui/Feedback';
 import QuantityStepper from '@/components/ui/QuantityStepper';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import WishlistButton from '@/components/product/WishlistButton';
 import ProductReviews from '@/components/product/ProductReviews';
+import BookPreview from '@/components/product/BookPreview';
+import { useCategoryName, useT } from '@/i18n/LanguageProvider';
 
 function Gallery({ product }) {
   const images = [...(product.images || [])].sort((a, b) => Number(b.is_primary) - Number(a.is_primary));
@@ -50,10 +53,13 @@ function Gallery({ product }) {
 }
 
 export default function ProductDetailPage({ params }) {
+  const t = useT();
+  const catName = useCategoryName();
   const { id } = use(params);
   const router = useRouter();
   const { data: product, loading, error, reload, status } = useFetch(() => catalogApi.product(id), [id]);
   const { addToCart, pendingId } = useAddToCart();
+  const checkoutHref = useCheckoutHref();
   const [chosenQty, setQty] = useState(null);
   const qty = chosenQty ?? Math.max(1, product?.moq || 1);
 
@@ -70,16 +76,17 @@ export default function ProductDetailPage({ params }) {
     return (
       <div className="container-page py-16">
         <ErrorState
-          message={status === 404 ? 'This product is not available anymore.' : error}
+          message={status === 404 ? t('This product is not available anymore.') : error}
           onRetry={status === 404 ? undefined : reload}
         />
-        <div className="text-center"><Button variant="secondary" href="/products">Browse products</Button></div>
+        <div className="text-center"><Button variant="secondary" href="/products">{t('Browse products')}</Button></div>
       </div>
     );
   }
 
-  const shop = product.shop_details;
   const category = product.category_details;
+  // Books belong to a class & subject; stationery and other items to a department & type
+  const kind = productKind(category);
   const stock = Number(product.stock_quantity);
   const outOfStock = stock <= 0;
   const moq = product.moq || 1;
@@ -87,61 +94,57 @@ export default function ProductDetailPage({ params }) {
 
   const handleBuyNow = async () => {
     const ok = await addToCart(product, qty);
-    if (ok) router.push('/cart');
+    if (ok) router.push(checkoutHref);
   };
 
   return (
     <div className="container-page py-8">
       <nav className="mb-6 flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
-        <Link href="/" className="hover:text-slate-800">Home</Link>
+        <Link href="/" className="hover:text-slate-800">{t('Home')}</Link>
         <ChevronRight className="size-3.5" />
-        <Link href="/products" className="hover:text-slate-800">Products</Link>
-        {category?.parent && (
+        {kind.isBook && (
           <>
+            <Link href="/products" className="hover:text-slate-800">{t('Books')}</Link>
             <ChevronRight className="size-3.5" />
-            <Link href={`/products?category=${category.parent}`} className="hover:text-slate-800">{category.parent_name}</Link>
           </>
         )}
-        {category && (
-          <>
-            <ChevronRight className="size-3.5" />
-            <Link href={`/products?category=${category.id}`} className="hover:text-slate-800">{category.name}</Link>
-          </>
-        )}
+        {kind.path.map((c, i) => (
+          <span key={c.id} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight className="size-3.5" />}
+            <Link href={`/products?category=${c.id}`} className="hover:text-slate-800">{catName(c.name)}</Link>
+          </span>
+        ))}
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-        <Gallery product={product} />
+        <div className="space-y-3">
+          <Gallery product={product} />
+          <BookPreview pdf={product.preview_pdf} title={product.title} />
+        </div>
 
         <div>
           <div className="flex flex-wrap gap-2">
-            {category?.parent_name && <Badge tone="brand">{category.parent_name}</Badge>}
-            {category && <Badge tone="gray">{category.name}</Badge>}
+            {kind.path.map((c, i) => <Badge key={c.id} tone={i === 0 ? 'brand' : 'gray'}>{catName(c.name)}</Badge>)}
           </div>
           <h1 className="mt-3 text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">{product.title}</h1>
           {product.rating_count > 0 && (
             <p className="mt-2 flex items-center gap-2 text-sm text-slate-600">
-              <Stars value={product.rating_avg} size="size-4" /> <strong>{Number(product.rating_avg).toFixed(1)}</strong> ({product.rating_count} review{product.rating_count !== 1 && 's'})
+              <Stars value={product.rating_avg} size="size-4" /> <strong>{Number(product.rating_avg).toFixed(1)}</strong> ({t(product.rating_count === 1 ? '1 review' : '{count} reviews', { count: product.rating_count })})
             </p>
           )}
           {(product.author || product.publisher) && (
             <div className="mt-2 space-y-0.5 text-[15px] text-slate-600">
               {product.author && (
-                <p>by <Link href={`/products?author=${encodeURIComponent(product.author)}`} className="font-medium text-brand-600 hover:underline">{product.author}</Link></p>
+                <p>{t('by')} <Link href={`/products?author=${encodeURIComponent(product.author)}`} className="font-medium text-brand-600 hover:underline">{product.author}</Link></p>
               )}
-              {product.publisher && (
-                <p>Publisher: <Link href={`/products?publisher=${encodeURIComponent(product.publisher)}`} className="font-medium text-slate-800 hover:text-brand-600 hover:underline">{product.publisher}</Link></p>
+              {kind.isBook && product.publisher && (
+                <p className="flex items-center gap-2 pt-1">{t('Publisher')}: <PublisherTag name={product.publisher} className="text-xs" /></p>
+              )}
+              {/* Other items show their brand */}
+              {!kind.isBook && product.publisher && (
+                <p>{t('Brand')}: <Link href={`/products?publisher=${encodeURIComponent(product.publisher)}`} className="font-medium text-slate-800 hover:text-brand-600 hover:underline">{product.publisher}</Link></p>
               )}
             </div>
-          )}
-
-          {shop && (
-            <Link href={`/shops/${shop.id}`} className="mt-3 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-brand-700">
-              <Store className="size-4" /> {shop.shop_name}
-              <span className="text-slate-300">·</span>
-              <Stars value={shop.average_rating} size="size-3.5" />
-              <span className="text-slate-500">({shop.total_reviews})</span>
-            </Link>
           )}
 
           <div className="mt-6 rounded-xl bg-slate-50 p-5 border border-slate-100">
@@ -149,25 +152,25 @@ export default function ProductDetailPage({ params }) {
             {hasDiscount && product.discount_end_date && (
               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-red-600">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Clock className="size-4" /> Offer ends {formatDate(product.discount_end_date)}
+                  <Clock className="size-4" /> {t('Offer ends {date}', { date: formatDate(product.discount_end_date) })}
                 </span>
                 {product.discount_start_date && (
                   <span className="text-xs text-slate-500">
-                    (Valid from {formatDate(product.discount_start_date)})
+                    ({t('Valid from {date}', { date: formatDate(product.discount_start_date) })})
                   </span>
                 )}
               </div>
             )}
             <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {outOfStock ? (
-                <span className="flex items-center gap-1.5 font-medium text-red-600"><AlertTriangle className="size-4" /> Out of stock</span>
+                <span className="flex items-center gap-1.5 font-medium text-red-600"><AlertTriangle className="size-4" /> {t('Out of stock')}</span>
               ) : product.is_low_stock ? (
-                <span className="flex items-center gap-1.5 font-medium text-amber-600"><AlertTriangle className="size-4" /> Only {stock} left</span>
+                <span className="flex items-center gap-1.5 font-medium text-amber-600"><AlertTriangle className="size-4" /> {t('Only {count} left', { count: stock })}</span>
               ) : (
-                <span className="flex items-center gap-1.5 font-medium text-emerald-600"><CheckCircle2 className="size-4" /> In stock ({stock} available)</span>
+                <span className="flex items-center gap-1.5 font-medium text-emerald-600"><CheckCircle2 className="size-4" /> {t('In stock ({count} available)', { count: stock })}</span>
               )}
-              {product.size && <span className="text-slate-600">Size: <strong className="text-slate-900">{product.size}</strong></span>}
-              {moq > 1 && <span className="text-slate-600">Minimum order: <strong className="text-slate-900">{moq} pcs</strong></span>}
+              {product.size && <span className="text-slate-600">{t(kind.isBook ? 'Edition' : 'Size')}: <strong className="text-slate-900">{product.size}</strong></span>}
+              {moq > 1 && <span className="text-slate-600">{t('Minimum order')}: <strong className="text-slate-900">{t('{count} pcs', { count: moq })}</strong></span>}
             </div>
           </div>
 
@@ -182,68 +185,53 @@ export default function ProductDetailPage({ params }) {
               loading={pendingId === product.id}
               onClick={() => addToCart(product, qty)}
             >
-              Add to cart
+              {t('Add to cart')}
             </Button>
             <Button size="lg" icon={Zap} className="flex-1 min-w-40" disabled={outOfStock} onClick={handleBuyNow}>
-              Buy now
+              {t('Buy now')}
             </Button>
             <WishlistButton productId={product.id} withLabel />
           </div>
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             {[
-              { icon: Truck, t: 'Pathao delivery', s: 'Inside Dhaka 1–2 days' },
-              { icon: ShieldCheck, t: 'Cash on delivery', s: 'Pay at your door' },
-              { icon: RotateCcw, t: 'Easy returns', s: 'See return policy' },
-            ].map(({ icon: Icon, t, s }) => (
-              <div key={t} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3">
+              { icon: Truck, title: 'Pathao delivery', text: 'Inside Dhaka 1–2 days' },
+              { icon: ShieldCheck, title: 'Cash on delivery', text: 'Pay at your door' },
+              { icon: RotateCcw, title: 'Easy returns', text: 'See return policy' },
+            ].map(({ icon: Icon, title, text }) => (
+              <div key={title} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3">
                 <Icon className="size-5 text-brand-600 shrink-0" />
                 <div>
-                  <p className="font-medium text-slate-800">{t}</p>
-                  <p className="text-xs text-slate-500">{s}</p>
+                  <p className="font-medium text-slate-800">{t(title)}</p>
+                  <p className="text-xs text-slate-500">{t(text)}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {shop && (
-            <div className="mt-6 flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
-              <ShopLogo src={shop.logo} name={shop.shop_name} className="size-12" />
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900 truncate">{shop.shop_name}</p>
-                <p className="flex items-center gap-1 text-xs text-slate-500 truncate">
-                  <MapPin className="size-3.5" /> {shop.city?.name || shop.shop_address}
-                  <span className="mx-1">·</span>
-                  {shop.shop_type === 'WHOLESALER' ? 'Wholesaler' : 'Retailer'}
-                </p>
-              </div>
-              <Button variant="secondary" size="sm" href={`/shops/${shop.id}`}>Visit shop</Button>
-            </div>
-          )}
         </div>
       </div>
 
       <section className="mt-12 card">
         <div className="border-b border-slate-100 px-6 py-4">
-          <h2 className="font-semibold text-slate-900">Book details</h2>
+          <h2 className="font-semibold text-slate-900">{t(kind.isBook ? 'Book details' : 'Product details')}</h2>
         </div>
         <div className="grid grid-cols-1 gap-8 p-6 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">
-            {product.description || 'No description provided by the seller.'}
+            {product.description || t('No description yet.')}
           </p>
           <dl className="space-y-3 text-sm">
             {[
               ['Author', product.author],
-              ['Publisher', product.publisher],
-              ['Class', category?.parent_name || (category && !category.parent ? category.name : null)],
-              ['Subject', category?.parent ? category.name : null],
-              ['Edition / size', product.size],
-              ['Minimum order', `${moq} pcs`],
-              ['Seller', shop?.shop_name],
+              ['Brand', kind.isBook ? null : product.publisher],
+              [kind.isBook ? 'Class' : 'Category', kind.root && catName(kind.root)],
+              [kind.isBook ? 'Subject' : 'Type', kind.leaf && kind.path.slice(1).map((c) => catName(c.name)).join(' › ')],
+              [kind.isBook ? 'Edition' : 'Size / pack', product.size],
+              ['Minimum order', t('{count} pcs', { count: moq })],
               ['Listed on', formatDate(product.created_at)],
             ].filter(([, v]) => v).map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-slate-100 pb-2">
-                <dt className="text-slate-500">{k}</dt>
+                <dt className="text-slate-500">{t(k)}</dt>
                 <dd className="font-medium text-slate-800 text-right">{v}</dd>
               </div>
             ))}
@@ -256,7 +244,7 @@ export default function ProductDetailPage({ params }) {
       {relatedProducts.length > 0 && (
         <section className="mt-12">
           <h2 className="mb-5 flex items-center gap-2 text-xl font-semibold text-slate-900">
-            <Package className="size-5 text-brand-600" /> You may also like
+            <Package className="size-5 text-brand-600" /> {t('You may also like')}
           </h2>
           <ProductGrid products={relatedProducts} className="xl:grid-cols-5" />
         </section>

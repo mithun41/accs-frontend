@@ -1,9 +1,12 @@
 'use client';
 
+import { useT } from '@/i18n/LanguageProvider';
+
 import { Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function QuantityStepper({ value, onChange, min = 1, max = 9999, disabled, size = 'md', className }) {
+  const t = useT();
   const h = size === 'sm' ? 'h-8' : 'h-11';
   const w = size === 'sm' ? 'w-8' : 'w-11';
   const set = (v) => onChange(Math.min(max, Math.max(min, Number.isNaN(v) ? min : v)));
@@ -14,7 +17,7 @@ export default function QuantityStepper({ value, onChange, min = 1, max = 9999, 
         onClick={() => set(value - 1)}
         disabled={disabled || value <= min}
         className={cn('flex h-full items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 rounded-l-lg', w)}
-        aria-label="Decrease quantity"
+        aria-label={t('Decrease quantity')}
       >
         <Minus className="size-4" />
       </button>
@@ -32,7 +35,7 @@ export default function QuantityStepper({ value, onChange, min = 1, max = 9999, 
         onClick={() => set(value + 1)}
         disabled={disabled || value >= max}
         className={cn('flex h-full items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-40 rounded-r-lg', w)}
-        aria-label="Increase quantity"
+        aria-label={t('Increase quantity')}
       >
         <Plus className="size-4" />
       </button>

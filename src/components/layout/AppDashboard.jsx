@@ -9,6 +9,7 @@ import { canOpen, dashboardHome, navFor } from '@/lib/navigation';
 import { humanize, roleOf } from '@/lib/utils';
 import { EmptyState } from '@/components/ui/Feedback';
 import Button from '@/components/ui/Button';
+import { useT } from '@/i18n/LanguageProvider';
 
 function roleLabel(user) {
   if (user?.is_superuser) return 'Superadmin';
@@ -17,6 +18,7 @@ function roleLabel(user) {
 }
 
 function Dashboard({ children, headerExtra }) {
+  const t = useT();
   const pathname = usePathname();
   const { user } = useSession();
   const allowed = canOpen(user, pathname);
@@ -29,9 +31,9 @@ function Dashboard({ children, headerExtra }) {
         <div className="card">
           <EmptyState
             icon={ShieldOff}
-            title="You don't have access to this page"
-            description="Ask an administrator to grant your role the required permission."
-            action={<Button href={dashboardHome(user)}>Go to my dashboard</Button>}
+            title={t("You don't have access to this page")}
+            description={t('Ask an administrator to grant your role the required permission.')}
+            action={<Button href={dashboardHome(user)}>{t('Go to my dashboard')}</Button>}
           />
         </div>
       )}

@@ -14,11 +14,13 @@ import { EmptyState, PageLoader } from '@/components/ui/Feedback';
 import QuantityStepper from '@/components/ui/QuantityStepper';
 import LocationPicker from '@/components/address/LocationPicker';
 import Button from '@/components/ui/Button';
+import { useT } from '@/i18n/LanguageProvider';
 
 const unitPrice = (p) => Number(p.after_discount_price ?? p.price ?? 0);
 const orderable = (p) => p.is_active && p.approval_status === 'APPROVED' && Number(p.stock_quantity) > 0;
 
 function BookOption({ product, selected, qty, onToggle, onQty, color }) {
+  const t = useT();
   const available = orderable(product);
   const price = unitPrice(product);
   const original = Number(product.price);
@@ -55,13 +57,13 @@ function BookOption({ product, selected, qty, onToggle, onQty, color }) {
         </div>
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           {!available ? (
-            <span className="text-sm font-medium text-slate-500">Out of stock</span>
+            <span className="text-sm font-medium text-slate-500">{t('Out of stock')}</span>
           ) : selected ? (
             <div onClick={(e) => e.stopPropagation()}>
               <QuantityStepper size="sm" value={qty} min={min} max={Math.max(min, product.stock_quantity)} onChange={onQty} />
             </div>
           ) : (
-            <span className="text-sm font-medium" style={{ color }}>Tap to add</span>
+            <span className="text-sm font-medium" style={{ color }}>{t('Tap to add')}</span>
           )}
           {selected && <span className="text-sm font-semibold text-slate-800">{formatPrice(price * qty)}</span>}
         </div>
@@ -71,35 +73,37 @@ function BookOption({ product, selected, qty, onToggle, onQty, color }) {
 }
 
 function Success({ order, created, color }) {
+  const t = useT();
   const { isAuthenticated } = useSession();
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
       <div className="mx-auto flex size-16 items-center justify-center rounded-full text-white" style={{ background: color }}>
         <CheckCircle2 className="size-9" />
       </div>
-      <h1 className="mt-6 text-2xl font-bold text-slate-900">Thank you! Your order is placed.</h1>
+      <h1 className="mt-6 text-2xl font-bold text-slate-900">{t('Thank you! Your order has been placed.')}</h1>
       <p className="mt-2 text-slate-600">
-        Order <strong>{order.order_number}</strong> · Total <strong>{formatPrice(order.grand_total)}</strong> (cash on delivery)
+        {t('Order')} <strong>{order.order_number}</strong> · {t('Total')} <strong>{formatPrice(order.grand_total)}</strong> ({t('Cash on delivery')})
       </p>
       <div className="mt-6 space-y-3 rounded-xl border border-slate-200 bg-white p-5 text-left text-sm text-slate-600">
-        <p className="flex gap-3"><PhoneCall className="size-5 shrink-0" style={{ color }} /> Our team will call {order.contact_phone} shortly to confirm your order.</p>
-        <p className="flex gap-3"><Truck className="size-5 shrink-0" style={{ color }} /> After confirmation the books are shipped with Pathao Courier.</p>
-        {created && <p className="flex gap-3"><ShieldCheck className="size-5 shrink-0" style={{ color }} /> We created an account for your phone number — sign in with an OTP code to track this order.</p>}
+        <p className="flex gap-3"><PhoneCall className="size-5 shrink-0" style={{ color }} /> {t('Our team will call {phone} shortly to confirm your order.', { phone: order.contact_phone })}</p>
+        <p className="flex gap-3"><Truck className="size-5 shrink-0" style={{ color }} /> {t('After confirmation the books are shipped with Pathao Courier.')}</p>
+        {created && <p className="flex gap-3"><ShieldCheck className="size-5 shrink-0" style={{ color }} /> {t('We created an account for your phone number — to track this order, tap “Forgot password?” on the sign-in page and set a password.')}</p>}
       </div>
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         {isAuthenticated ? (
-          <Button href={`/account/orders/${order.id}`}>Track my order</Button>
+          <Button href={`/account/orders/${order.id}`}>{t('Track my order')}</Button>
         ) : (
-          <Button href="/login">Sign in to track</Button>
+          <Button href="/login">{t('Sign in to track')}</Button>
         )}
-        <Button variant="secondary" href="/">Browse more books</Button>
+        <Button variant="secondary" href="/">{t('Browse more books')}</Button>
       </div>
     </div>
   );
 }
 
 function LandingView({ page }) {
-  const color = page.theme_color || '#df3b3b';
+  const t = useT();
+  const color = page.theme_color || '#cc0066';
   const { user } = useSession();
   const items = page.items || [];
   const [selection, setSelection] = useState(() =>
@@ -144,15 +148,15 @@ function LandingView({ page }) {
   const submit = async (e) => {
     e.preventDefault();
     const errs = {};
-    if (!chosen.length) errs.items = 'Select at least one book';
-    if (form.full_name.trim().length < 2) errs.full_name = 'Enter your name';
-    if (!isValidBDPhone(form.phone_number)) errs.phone_number = 'Enter a valid mobile number';
-    if (!location.city_id) errs.city_id = 'Select a city';
-    if (!location.zone_id) errs.zone_id = 'Select a zone';
-    if (form.address.trim().length < 5) errs.address = 'Enter your full address';
+    if (!chosen.length) errs.items = t('Select at least one book');
+    if (form.full_name.trim().length < 2) errs.full_name = t('Enter your name');
+    if (!isValidBDPhone(form.phone_number)) errs.phone_number = t('Enter a valid Bangladeshi mobile number');
+    if (!location.city_id) errs.city_id = t('Select a city');
+    if (!location.zone_id) errs.zone_id = t('Select a zone');
+    if (form.address.trim().length < 5) errs.address = t('Enter your full address (house, road, area)');
     setErrors(errs);
     if (Object.keys(errs).length) {
-      toast.error(errs.items || 'Please complete your delivery details');
+      toast.error(errs.items || t('Please complete your delivery details'));
       return;
     }
     setPlacing(true);
@@ -173,7 +177,7 @@ function LandingView({ page }) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       setErrors(getFieldErrors(err));
-      toast.error(getErrorMessage(err, 'Could not place the order'));
+      toast.error(getErrorMessage(err, t('Could not place your order')));
     } finally {
       setPlacing(false);
     }
@@ -192,12 +196,12 @@ function LandingView({ page }) {
         )}
         <div className="relative mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold ring-1 ring-white/30">
-            <Tag className="size-3.5" /> Special offer · Cash on delivery
+            <Tag className="size-3.5" /> {t('Special offer')} · {t('Cash on delivery')}
           </span>
           <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-tight sm:text-5xl">{page.title}</h1>
           {page.headline && <p className="mt-3 max-w-2xl text-lg text-white/90">{page.headline}</p>}
           <a href="#order" className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 font-semibold shadow-lg" style={{ color }}>
-            <ShoppingBag className="size-5" /> {page.cta_text || 'Order now'}
+            <ShoppingBag className="size-5" /> {page.cta_text || t('Order now')}
           </a>
         </div>
       </section>
@@ -213,12 +217,12 @@ function LandingView({ page }) {
           <div>
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Choose your books</h2>
-                <p className="text-sm text-slate-500">Tick the books you want and set the quantity.</p>
+                <h2 className="text-xl font-bold text-slate-900">{t('Choose your books')}</h2>
+                <p className="text-sm text-slate-500">{t('Tick the books you want and set the quantity.')}</p>
               </div>
               {available.length > 1 && (
                 <button type="button" onClick={selectAll} className="rounded-full border px-4 py-1.5 text-sm font-semibold" style={{ color, borderColor: color }}>
-                  {allSelected ? 'Clear all' : 'Select all'}
+                  {allSelected ? t('Clear all') : t('Select all')}
                 </button>
               )}
             </div>
@@ -239,24 +243,24 @@ function LandingView({ page }) {
           </div>
 
           <form id="order" onSubmit={submit} className="scroll-mt-6 rounded-xl border border-slate-200 bg-white p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900"><PackageCheck className="size-6" style={{ color }} /> Delivery details</h2>
-            <p className="mb-5 text-sm text-slate-500">No account needed — we&apos;ll call you to confirm before shipping.</p>
+            <h2 className="flex items-center gap-2 text-xl font-bold text-slate-900"><PackageCheck className="size-6" style={{ color }} /> {t('Delivery details')}</h2>
+            <p className="mb-5 text-sm text-slate-500">{t("No account needed — we'll call you to confirm before shipping.")}</p>
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Your name" required error={errors.full_name}>
+                <Field label={t('Your name')} required error={errors.full_name}>
                   <Input value={form.full_name} onChange={set('full_name')} error={errors.full_name} autoComplete="name" />
                 </Field>
-                <Field label="Mobile number" required error={errors.phone_number}>
+                <Field label={t('Mobile number')} required error={errors.phone_number}>
                   <PhoneInput value={form.phone_number} onChange={(v) => setForm((f) => ({ ...f, phone_number: v }))} error={errors.phone_number} />
                 </Field>
               </div>
               <LocationPicker value={location} onChange={setLocation} errors={errors} />
-              <Field label="Full address" required error={errors.address} hint="House / flat, road, area">
+              <Field label={t('Full address')} required error={errors.address} hint={t('House / flat no., road, landmark')}>
                 <Textarea rows={2} value={form.address} onChange={set('address')} error={errors.address} />
               </Field>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Coupon code" hint="Optional"><Input value={form.coupon_code} onChange={set('coupon_code')} placeholder="e.g. WELCOME10" className="uppercase" /></Field>
-                <Field label="Note" hint="Optional"><Input value={form.note} onChange={set('note')} placeholder="e.g. Call after 5pm" /></Field>
+                <Field label={t('Coupon code')} hint={t('Optional')}><Input value={form.coupon_code} onChange={set('coupon_code')} placeholder="e.g. WELCOME10" className="uppercase" /></Field>
+                <Field label={t('Note')} hint={t('Optional')}><Input value={form.note} onChange={set('note')} placeholder={t('e.g. Call after 5pm')} /></Field>
               </div>
             </div>
             <button
@@ -265,16 +269,16 @@ function LandingView({ page }) {
               className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-lg text-base font-semibold text-white shadow-md transition hover:brightness-95 disabled:opacity-60 lg:hidden"
               style={{ background: color }}
             >
-              {placing ? 'Placing order…' : `${page.cta_text || 'Order now'} · ${formatPrice(subtotal + (delivery || 0))}`}
+              {placing ? t('Placing order…') : `${page.cta_text || t('Order now')} · ${formatPrice(subtotal + (delivery || 0))}`}
             </button>
           </form>
         </div>
 
         <aside className="hidden lg:block">
           <div className="sticky top-6 rounded-xl border border-slate-200 bg-white p-5">
-            <h3 className="font-bold text-slate-900">Your order</h3>
+            <h3 className="font-bold text-slate-900">{t('Your order')}</h3>
             {chosen.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">No books selected yet.</p>
+              <p className="mt-3 text-sm text-slate-500">{t('No books selected yet.')}</p>
             ) : (
               <ul className="mt-3 max-h-72 space-y-2 overflow-y-auto">
                 {chosen.map(({ product }) => (
@@ -286,9 +290,9 @@ function LandingView({ page }) {
               </ul>
             )}
             <dl className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
-              <div className="flex justify-between"><dt className="text-slate-500">Subtotal</dt><dd>{formatPrice(subtotal)}</dd></div>
-              <div className="flex justify-between"><dt className="text-slate-500">Delivery</dt><dd>{delivery !== null ? formatPrice(delivery) : <span className="text-slate-400">Select location</span>}</dd></div>
-              <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold"><dt>Total</dt><dd style={{ color }}>{formatPrice(subtotal + (delivery || 0))}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-500">{t('Subtotal')}</dt><dd>{formatPrice(subtotal)}</dd></div>
+              <div className="flex justify-between"><dt className="text-slate-500">{t('Delivery')}</dt><dd>{delivery !== null ? formatPrice(delivery) : <span className="text-slate-400">{t('Select location')}</span>}</dd></div>
+              <div className="flex justify-between border-t border-slate-100 pt-2 text-base font-bold"><dt>{t('Total')}</dt><dd style={{ color }}>{formatPrice(subtotal + (delivery || 0))}</dd></div>
             </dl>
             <button
               type="submit"
@@ -297,7 +301,7 @@ function LandingView({ page }) {
               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-lg text-base font-semibold text-white shadow-md transition hover:brightness-95 disabled:opacity-60"
               style={{ background: color }}
             >
-              {placing ? 'Placing order…' : page.cta_text || 'Order now'}
+              {placing ? t('Placing order…') : page.cta_text || t('Order now')}
             </button>
             <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500"><ShieldCheck className="size-4" /> Pay cash when the books arrive</p>
           </div>
@@ -319,6 +323,7 @@ function LandingView({ page }) {
 }
 
 export default function OfferPage({ params }) {
+  const t = useT();
   const { slug } = use(params);
   const { data, loading, status } = useFetch(() => marketingApi.publicLanding(slug), [slug]);
   const page = useMemo(() => data, [data]);
@@ -328,9 +333,9 @@ export default function OfferPage({ params }) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16">
         <div className="rounded-xl border border-slate-200 bg-white">
-          <EmptyState icon={Tag} title="This offer is not available" description="It may have ended. Have a look at our full store instead." action={<Button href="/">Go to the store</Button>} />
+          <EmptyState icon={Tag} title={t('This offer is not available')} description={t('It may have ended. Have a look at our full store instead.')} action={<Button href="/">{t('Go to the store')}</Button>} />
         </div>
-        <p className="mt-4 text-center text-sm text-slate-500"><Link href="/products" className="link">Browse all books</Link></p>
+        <p className="mt-4 text-center text-sm text-slate-500"><Link href="/products" className="link">{t('Browse all books')}</Link></p>
       </div>
     );
   }

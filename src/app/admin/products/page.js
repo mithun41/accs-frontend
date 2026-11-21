@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, Eye, Package, Percent } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { CheckCircle2, XCircle, Eye, Package, Pencil, Percent, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { catalogApi } from '@/lib/services';
 import { useFetch } from '@/hooks/useFetch';
+import { useSession } from '@/hooks/useSession';
+import { buildSession } from '@/lib/navigation';
 import { formatDate, formatPrice, getErrorMessage, mediaUrl, primaryImage, productPrice, toList, toMeta } from '@/lib/utils';
 import { PageHeader, Pagination, SearchInput, Tabs, DescriptionList } from '@/components/ui/Layout';
 import { EmptyState } from '@/components/ui/Feedback';
@@ -51,6 +54,7 @@ function ReviewModal({ product, onClose, onChanged }) {
       description={`${product.shop_name} · submitted ${formatDate(product.created_at)}`}
       footer={
         <>
+          <Button variant="ghost" href={`/admin/products/${product.id}`} icon={Pencil} className="sm:mr-auto">Edit details</Button>
           <Button variant="secondary" onClick={() => act('save')} loading={busy === 'save'}>Save only</Button>
           <Button variant="danger-outline" icon={XCircle} onClick={() => act('reject')} loading={busy === 'reject'}>Reject</Button>
           <Button icon={CheckCircle2} onClick={() => act('approve')} loading={busy === 'approve'}>Approve</Button>
@@ -96,8 +100,13 @@ function ReviewModal({ product, onClose, onChanged }) {
   );
 }
 
-export default function AdminProductsPage() {
-  const [tab, setTabState] = useState('PENDING');
+const TABS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
+
+function AdminProducts() {
+  const params = useSearchParams();
+  const { user } = useSession();
+  const canAdd = buildSession(user).hasPerm(['add_product']);
+  const [tab, setTabState] = useState(() => (TABS.includes(params.get('tab')) ? params.get('tab') : 'PENDING'));
   const setTab = (v) => {
     setTabState(v);
     setPage(1);
@@ -133,7 +142,11 @@ export default function AdminProductsPage() {
 
   return (
     <>
-      <PageHeader title="Products" description="Review vendor submissions and manage the catalogue." />
+      <PageHeader
+        title="Products"
+        description="Review vendor submissions, add books for any shop and manage the catalogue."
+        actions={canAdd && <Button href="/admin/products/new" icon={PlusCircle}>Add product</Button>}
+      />
       <div className="card">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-5 pt-4 md:flex-row md:items-end md:justify-between">
           <Tabs
@@ -182,6 +195,7 @@ export default function AdminProductsPage() {
               render: (p) => (
                 <div className="flex justify-end gap-1">
                   <Button size="sm" variant="ghost" icon={Eye} onClick={() => setSelected(p)}>Review</Button>
+                  <Button size="sm" variant="ghost" icon={Pencil} href={`/admin/products/${p.id}`} aria-label={`Edit ${p.title}`} title="Edit details" />
                   {p.approval_status !== 'APPROVED' && <Button size="sm" variant="secondary" icon={CheckCircle2} onClick={() => quickApprove(p)}>Approve</Button>}
                 </div>
               ),
@@ -192,5 +206,13 @@ export default function AdminProductsPage() {
       </div>
       {selected && <ReviewModal product={selected} onClose={() => setSelected(null)} onChanged={reload} />}
     </>
+  );
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminProducts />
+    </Suspense>
   );
 }

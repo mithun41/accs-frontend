@@ -1,4 +1,7 @@
+'use client';
+
 import { Loader2, Inbox, AlertCircle, RefreshCw } from 'lucide-react';
+import { useT } from '@/i18n/LanguageProvider';
 import { cn } from '@/lib/utils';
 import Button from './Button';
 
@@ -6,11 +9,12 @@ export function Spinner({ className }) {
   return <Loader2 className={cn('size-5 animate-spin text-brand-600', className)} />;
 }
 
-export function PageLoader({ label = 'Loading…', className }) {
+export function PageLoader({ label, className }) {
+  const t = useT();
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 py-24 text-sm text-slate-500', className)}>
       <Spinner className="size-7" />
-      {label}
+      {label ?? t('Loading…')}
     </div>
   );
 }
@@ -33,16 +37,17 @@ export function EmptyState({ icon: Icon = Inbox, title, description, action, cla
 }
 
 export function ErrorState({ message, onRetry, className }) {
+  const t = useT();
   return (
     <div className={cn('flex flex-col items-center justify-center text-center py-14 px-6', className)}>
       <div className="flex size-14 items-center justify-center rounded-2xl bg-red-50 text-red-500 mb-4">
         <AlertCircle className="size-7" />
       </div>
-      <h3 className="text-base font-semibold text-slate-900">Couldn&apos;t load this</h3>
+      <h3 className="text-base font-semibold text-slate-900">{t("Couldn't load this")}</h3>
       <p className="mt-1.5 max-w-sm text-sm text-slate-500">{message}</p>
       {onRetry && (
         <Button variant="secondary" className="mt-5" icon={RefreshCw} onClick={onRetry}>
-          Try again
+          {t('Try again')}
         </Button>
       )}
     </div>

@@ -1,8 +1,12 @@
+'use client';
+
 import { Check, XCircle } from 'lucide-react';
 import { cn, humanize } from '@/lib/utils';
 import { ORDER_STEPS, orderProgress } from '@/lib/orders';
+import { useT } from '@/i18n/LanguageProvider';
 
 export default function OrderProgress({ order }) {
+  const t = useT();
   const progress = orderProgress(order);
 
   if (progress.terminal) {
@@ -10,7 +14,7 @@ export default function OrderProgress({ order }) {
       <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
         <XCircle className="mt-0.5 size-5 shrink-0 text-red-600" />
         <div>
-          <p className="font-semibold text-red-800">Order {humanize(progress.terminal).toLowerCase()}</p>
+          <p className="font-semibold text-red-800">{t(`Order ${humanize(progress.terminal).toLowerCase()}`)}</p>
           {order.rejection_reason && <p className="mt-0.5 text-sm text-red-700">{order.rejection_reason}</p>}
         </div>
       </div>
@@ -36,7 +40,7 @@ export default function OrderProgress({ order }) {
             >
               {done ? <Check className="size-4" /> : i + 1}
             </span>
-            <span className={cn('mt-2 text-xs font-medium', done ? 'text-slate-900' : 'text-slate-400')}>{label}</span>
+            <span className={cn('mt-2 text-xs font-medium', done ? 'text-slate-900' : 'text-slate-400')}>{t(label)}</span>
           </li>
         );
       })}

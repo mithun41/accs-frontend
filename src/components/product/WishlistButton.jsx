@@ -3,12 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
+import { useT } from '@/i18n/LanguageProvider';
 import { useSession } from '@/hooks/useSession';
 import { useWishlistStore } from '@/store/wishlist';
 import { cn, getErrorMessage } from '@/lib/utils';
 
 /** Heart toggle; asks guests to sign in. */
 export default function WishlistButton({ productId, className, withLabel = false }) {
+  const t = useT();
   const router = useRouter();
   const { isAuthenticated } = useSession();
   const saved = useWishlistStore((s) => s.ids.includes(productId));
@@ -18,13 +20,13 @@ export default function WishlistButton({ productId, className, withLabel = false
     e.preventDefault();
     e.stopPropagation();
     if (!isAuthenticated) {
-      toast.info('Sign in to save books to your wishlist');
+      toast.info(t('Sign in to save books to your wishlist'));
       router.push(`/login?next=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     try {
       const nowSaved = await toggle(productId);
-      toast.success(nowSaved ? 'Saved to wishlist' : 'Removed from wishlist');
+      toast.success(nowSaved ? t('Saved to wishlist') : t('Removed from wishlist'));
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -35,8 +37,8 @@ export default function WishlistButton({ productId, className, withLabel = false
       type="button"
       onClick={onClick}
       aria-pressed={saved}
-      aria-label={saved ? 'Remove from wishlist' : 'Save to wishlist'}
-      title={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+      aria-label={saved ? t('Remove from wishlist') : t('Save to wishlist')}
+      title={saved ? t('Remove from wishlist') : t('Save to wishlist')}
       className={cn(
         withLabel
           ? 'btn btn-secondary btn-lg'
@@ -45,7 +47,7 @@ export default function WishlistButton({ productId, className, withLabel = false
       )}
     >
       <Heart className={cn('size-4', saved ? 'fill-brand-600 text-brand-600' : 'text-slate-500')} />
-      {withLabel && (saved ? 'Saved' : 'Wishlist')}
+      {withLabel && (saved ? t('Saved') : t('Wishlist'))}
     </button>
   );
 }

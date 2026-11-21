@@ -31,8 +31,15 @@ export function formatDate(value, withTime = false) {
   });
 }
 
+// Uploads the API returns as absolute URLs on its own internal host (e.g. http://127.0.0.1:8000/media/…)
+const INTERNAL_MEDIA = /^https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0)(?::\d+)?(\/media\/.*)$/i;
+
 export function mediaUrl(path) {
   if (!path) return null;
+  // Serve them from the configured API origin (relative "/media/…" when the API is proxied
+  // through Next.js), so images also load for visitors reaching the site via a tunnel or domain.
+  const internal = INTERNAL_MEDIA.exec(path);
+  if (internal) return `${API_ORIGIN}${internal[1]}`;
   if (/^https?:\/\//.test(path) || path.startsWith('blob:') || path.startsWith('data:')) return path;
   return `${API_ORIGIN}${path.startsWith('/') ? '' : '/'}${path}`;
 }

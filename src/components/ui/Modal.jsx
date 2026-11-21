@@ -1,5 +1,7 @@
 'use client';
 
+import { useT } from '@/i18n/LanguageProvider';
+
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
@@ -7,6 +9,7 @@ import Button from './Button';
 import { cn } from '@/lib/utils';
 
 export default function Modal({ open, onClose, title, description, children, footer, size = 'md' }) {
+  const t = useT();
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === 'Escape' && onClose?.();
@@ -39,7 +42,7 @@ export default function Modal({ open, onClose, title, description, children, foo
             <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
             {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-icon -mr-2 -mt-1" aria-label="Close">
+          <button onClick={onClose} className="btn btn-ghost btn-icon -mr-2 -mt-1" aria-label={t('Close')}>
             <X className="size-5" />
           </button>
         </div>
@@ -55,26 +58,27 @@ export function ConfirmDialog({
   open,
   onClose,
   onConfirm,
-  title = 'Are you sure?',
+  title,
   message,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   tone = 'danger',
   loading = false,
   children,
 }) {
+  const t = useT();
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title={title}
+      title={title ?? t('Are you sure?')}
       size="sm"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={loading}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>
-            {confirmLabel}
+            {confirmLabel ?? t('Confirm')}
           </Button>
         </>
       }

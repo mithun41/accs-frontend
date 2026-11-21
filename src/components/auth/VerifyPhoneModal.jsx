@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useT } from '@/i18n/LanguageProvider';
 import { authApi } from '@/lib/services';
 import { getErrorMessage } from '@/lib/utils';
 import Modal from '@/components/ui/Modal';
@@ -17,6 +18,7 @@ export default function VerifyPhoneModal(props) {
 
 // `sendCode` defaults to the new-number OTP endpoint; pass authApi.loginOtp for existing accounts
 function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnOpen = true, sendCode = authApi.sendOtp }) {
+  const t = useT();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [sentAt, setSentAt] = useState(0);
@@ -25,7 +27,7 @@ function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnO
     sendCode(phone)
       .then(() => {
         setSentAt(Date.now());
-        toast.success('Verification code sent');
+        toast.success(t('Verification code sent'));
       })
       .catch((err) => toast.error(getErrorMessage(err)));
 
@@ -44,7 +46,7 @@ function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnO
         onVerified?.(res);
       }
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Invalid code'));
+      toast.error(getErrorMessage(err, t('Invalid code')));
     } finally {
       setLoading(false);
     }
@@ -55,12 +57,12 @@ function VerifyPhoneDialog({ onClose, phone, onVerified, onVerifyCustom, sendOnO
       open
       onClose={onClose}
       size="sm"
-      title="Verify your phone"
-      description={`Enter the 6-digit code we sent to ${phone}`}
+      title={t('Verify your phone')}
+      description={t('Enter the 6-digit code we sent to {phone}', { phone })}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={verify} loading={loading} disabled={otp.length < 6}>Verify</Button>
+          <Button variant="secondary" onClick={onClose}>{t('Cancel')}</Button>
+          <Button onClick={verify} loading={loading} disabled={otp.length < 6}>{t('Verify')}</Button>
         </>
       }
     >

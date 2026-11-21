@@ -11,8 +11,10 @@ import { Field, OtpInput, PasswordInput, PhoneInput } from '@/components/ui/Fiel
 import { Alert } from '@/components/ui/Feedback';
 import Button from '@/components/ui/Button';
 import ResendTimer from '@/components/auth/ResendTimer';
+import { useT } from '@/i18n/LanguageProvider';
 
 export default function ForgotPasswordPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [phone, setPhone] = useState('');
@@ -26,13 +28,13 @@ export default function ForgotPasswordPage() {
   const send = async (e) => {
     e?.preventDefault();
     setError('');
-    if (!isValidBDPhone(phone)) return setError('Enter a valid Bangladeshi mobile number.');
+    if (!isValidBDPhone(phone)) return setError(t('Enter a valid Bangladeshi mobile number.'));
     setLoading(true);
     try {
       await authApi.forgotPassword(normalizePhone(phone));
       setStep(2);
       setSentAt(Date.now());
-      toast.success('Reset code sent by SMS');
+      toast.success(t('Reset code sent by SMS'));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -43,12 +45,12 @@ export default function ForgotPasswordPage() {
   const reset = async (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 6) return setError('Password must be at least 6 characters.');
-    if (password !== confirm) return setError('Passwords do not match.');
+    if (password.length < 6) return setError(t('Password must be at least 6 characters.'));
+    if (password !== confirm) return setError(t('Passwords do not match.'));
     setLoading(true);
     try {
       await authApi.resetPassword({ phone_number: normalizePhone(phone), otp_code: otp, new_password: password, confirm_new_password: confirm });
-      toast.success('Password updated. Please sign in.');
+      toast.success(t('Password updated. Please sign in.'));
       router.replace('/login');
     } catch (err) {
       setError(getErrorMessage(err));
@@ -59,37 +61,37 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <Link href="/login" className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800">
-        <ArrowLeft className="size-4" /> Back to sign in
+        <ArrowLeft className="size-4" /> {t('Back to sign in')}
       </Link>
       <div className="mb-8">
         <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
           <KeyRound className="size-6" />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{step === 1 ? 'Reset your password' : 'Choose a new password'}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{step === 1 ? t('Reset your password') : t('Choose a new password')}</h1>
         <p className="mt-2 text-sm text-slate-500">
-          {step === 1 ? 'Enter your registered mobile number and we will send you a reset code.' : `Enter the code sent to ${normalizePhone(phone)} and your new password.`}
+          {step === 1 ? t('Enter your registered mobile number and we will send you a reset code.') : t('Enter the code sent to {phone} and your new password.', { phone: normalizePhone(phone) })}
         </p>
       </div>
       {error && <Alert tone="error" icon={ShieldAlert} className="mb-5">{error}</Alert>}
       {step === 1 ? (
         <form onSubmit={send} className="space-y-5">
-          <Field label="Mobile number">
+          <Field label={t('Mobile number')}>
             <PhoneInput value={phone} onChange={setPhone} autoFocus required />
           </Field>
-          <Button type="submit" size="lg" className="w-full" loading={loading}>Send reset code</Button>
+          <Button type="submit" size="lg" className="w-full" loading={loading}>{t('Send reset code')}</Button>
         </form>
       ) : (
         <form onSubmit={reset} className="space-y-5">
-          <Field label="Verification code">
+          <Field label={t('Verification code')}>
             <OtpInput value={otp} onChange={setOtp} />
           </Field>
-          <Field label="New password">
-            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="At least 6 characters" required />
+          <Field label={t('New password')}>
+            <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder={t('At least 6 characters')} required />
           </Field>
-          <Field label="Confirm new password">
+          <Field label={t('Confirm new password')}>
             <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
           </Field>
-          <Button type="submit" size="lg" className="w-full" loading={loading} disabled={otp.length < 6}>Update password</Button>
+          <Button type="submit" size="lg" className="w-full" loading={loading} disabled={otp.length < 6}>{t('Update password')}</Button>
           <div className="text-center"><ResendTimer key={sentAt} onResend={() => send()} /></div>
         </form>
       )}

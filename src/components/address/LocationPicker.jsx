@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { pathaoApi } from '@/lib/services';
 import { Field, Select } from '@/components/ui/Field';
+import { useT } from '@/i18n/LanguageProvider';
 
 /**
  * Pathao City → Zone → Area cascading selects.
  * value: { city_id, zone_id, area_id, city_name, zone_name, area_name }
  */
 export default function LocationPicker({ value, onChange, errors = {}, required = true }) {
+  const t = useT();
   const [cities, setCities] = useState(null);
   // Remember which parent each list belongs to so stale lists are never shown
   const [zoneList, setZoneList] = useState({ for: null, items: [] });
@@ -47,7 +49,7 @@ export default function LocationPicker({ value, onChange, errors = {}, required 
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <Field label="City / District" required={required} error={errors.city_id}>
+      <Field label={t('City / District')} required={required} error={errors.city_id}>
         <Select
           value={value.city_id || ''}
           disabled={loading.cities}
@@ -58,13 +60,13 @@ export default function LocationPicker({ value, onChange, errors = {}, required 
             onChange({ city_id: id, city_name: c?.city_name || '', zone_id: null, zone_name: '', area_id: null, area_name: '' });
           }}
         >
-          <option value="">{loading.cities ? 'Loading…' : 'Select city'}</option>
+          <option value="">{loading.cities ? t('Loading…') : t('Select city')}</option>
           {cityItems.map((c) => (
             <option key={c.city_id} value={c.city_id}>{c.city_name}</option>
           ))}
         </Select>
       </Field>
-      <Field label="Zone / Thana" required={required} error={errors.zone_id}>
+      <Field label={t('Zone / Thana')} required={required} error={errors.zone_id}>
         <Select
           value={value.zone_id || ''}
           disabled={!value.city_id || loading.zones}
@@ -75,13 +77,13 @@ export default function LocationPicker({ value, onChange, errors = {}, required 
             onChange({ ...value, zone_id: id, zone_name: z?.zone_name || '', area_id: null, area_name: '' });
           }}
         >
-          <option value="">{loading.zones ? 'Loading…' : 'Select zone'}</option>
+          <option value="">{loading.zones ? t('Loading…') : t('Select zone')}</option>
           {zones.map((z) => (
             <option key={z.zone_id} value={z.zone_id}>{z.zone_name}</option>
           ))}
         </Select>
       </Field>
-      <Field label="Area" error={errors.area_id}>
+      <Field label={t('Area')} error={errors.area_id}>
         <Select
           value={value.area_id || ''}
           disabled={!value.zone_id || loading.areas}
@@ -91,7 +93,7 @@ export default function LocationPicker({ value, onChange, errors = {}, required 
             onChange({ ...value, area_id: id, area_name: a?.area_name || '' });
           }}
         >
-          <option value="">{loading.areas ? 'Loading…' : 'Select area (optional)'}</option>
+          <option value="">{loading.areas ? t('Loading…') : t('Select area (optional)')}</option>
           {areas.map((a) => (
             <option key={a.area_id} value={a.area_id}>{a.area_name}</option>
           ))}

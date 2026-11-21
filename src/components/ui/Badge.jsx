@@ -1,4 +1,7 @@
+'use client';
+
 import { cn, humanize } from '@/lib/utils';
+import { useT } from '@/i18n/LanguageProvider';
 
 const tones = {
   gray: 'bg-slate-100 text-slate-700 ring-slate-200',
@@ -59,11 +62,12 @@ const STATUS_LABELS = {
 };
 
 export function StatusBadge({ status, label, className }) {
+  const t = useT();
   if (!status) return null;
   const key = String(status).toUpperCase();
   return (
     <Badge tone={STATUS_TONES[key] || 'gray'} dot className={className}>
-      {label || STATUS_LABELS[key] || humanize(status)}
+      {t(label || STATUS_LABELS[key] || humanize(status))}
     </Badge>
   );
 }

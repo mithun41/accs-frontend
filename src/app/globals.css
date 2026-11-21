@@ -1,24 +1,41 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-sans: var(--font-jakarta), var(--font-hind), ui-sans-serif, system-ui, sans-serif;
+  --font-bangla: var(--font-hind), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Brand: book-shop red */
-  --color-brand-50: #fef3f2;
-  --color-brand-100: #fde4e3;
-  --color-brand-200: #fbcdcc;
-  --color-brand-300: #f7a9a8;
-  --color-brand-400: #f07776;
-  --color-brand-500: #e64e4d;
-  --color-brand-600: #df3b3b;
-  --color-brand-700: #bc2a2a;
-  --color-brand-800: #9c2626;
-  --color-brand-900: #822626;
-  --color-brand-950: #470f0f;
+  /* Brand: ACCS magenta (#cc0066), taken from the logo */
+  --color-brand-50: #fff0f6;
+  --color-brand-100: #ffe1ee;
+  --color-brand-200: #ffc4de;
+  --color-brand-300: #ff95c2;
+  --color-brand-400: #f9569d;
+  --color-brand-500: #e8237c;
+  --color-brand-600: #cc0066;
+  --color-brand-700: #a90055;
+  --color-brand-800: #8c0749;
+  --color-brand-900: #6e0a3b;
+  --color-brand-950: #1f0b16;
 
-  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px -4px rgb(15 23 42 / 0.08);
-  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.04), 0 16px 32px -12px rgb(15 23 42 / 0.18);
+  /* Accent: warm saffron, used for offers, badges and highlights */
+  --color-accent-50: #fff8ec;
+  --color-accent-100: #ffefd0;
+  --color-accent-200: #ffdb9f;
+  --color-accent-300: #ffc163;
+  --color-accent-400: #fea535;
+  --color-accent-500: #f8890f;
+  --color-accent-600: #e06c07;
+  --color-accent-700: #b94f0a;
+  --color-accent-800: #963e10;
+  --color-accent-900: #7a3411;
+
+  /* Surfaces */
+  --color-paper: #f7f6f5;
+  --color-ink: #19171a;
+
+  --shadow-soft: 0 1px 2px rgb(31 11 22 / 0.04), 0 4px 16px -4px rgb(31 11 22 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(31 11 22 / 0.04), 0 18px 36px -14px rgb(31 11 22 / 0.22);
 }
 
 @layer base {
@@ -27,7 +44,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-[#f6f9fc] text-[#2b3445];
+    @apply bg-paper text-ink;
   }
   ::selection {
     @apply bg-brand-100 text-brand-900;
@@ -49,6 +66,7 @@
   .btn-lg { @apply h-12 px-6 text-base; }
   .btn-icon { @apply h-9 w-9 px-0; }
   .btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700 shadow-sm; }
+  .btn-accent { @apply bg-accent-500 text-white hover:bg-accent-600 shadow-sm; }
   .btn-secondary { @apply bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:border-slate-400 shadow-sm; }
   .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900; }
   .btn-danger { @apply bg-red-600 text-white hover:bg-red-700 shadow-sm; }
@@ -92,4 +110,63 @@
 
 @keyframes shimmer {
   100% { transform: translateX(100%); }
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Publisher pill on book cards: soft gradient with a light sweeping across it */
+@keyframes publisher-sheen {
+  0%, 55% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(260%) skewX(-20deg); }
+}
+@keyframes publisher-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.publisher-tag {
+  position: relative;
+  overflow: hidden;
+  animation: publisher-pop 0.45s ease-out both;
+}
+.publisher-tag::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+  animation: publisher-sheen 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .publisher-tag, .publisher-tag::after { animation: none; }
+  .publisher-tag::after { display: none; }
+}
+
+/* Highlighted filter card (Publisher): soft glowing ring and rows that slide in */
+@keyframes filter-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(204 0 102 / 0), 0 6px 18px -10px rgb(204 0 102 / 0.35); }
+  50% { box-shadow: 0 0 0 4px rgb(204 0 102 / 0.08), 0 10px 24px -10px rgb(204 0 102 / 0.45); }
+}
+@keyframes filter-row-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: none; }
+}
+.filter-glow { animation: filter-glow 2.8s ease-in-out infinite; }
+.filter-row { animation: filter-row-in 0.35s ease-out backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .filter-glow, .filter-row { animation: none; }
+}
+
+/* Bangla: use Hind Siliguri first so Bangla digits, brackets and dashes share one font.
+   Kept outside the layers so it wins over the body's font-sans utility. */
+html[lang="bn"] body {
+  font-family: var(--font-bangla);
 }

@@ -14,6 +14,25 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import DataTable from '@/components/ui/Table';
 
+// Account types every user gets at sign-up; they are not meant for staff
+const CUSTOMER_ROLES = ['buyer', 'vendor', 'retailer', 'wholesaler', 'service_provider'];
+const isCustomerRole = (r) => CUSTOMER_ROLES.includes(r.name);
+
+// What the ready-made staff roles are for
+const ROLE_HINTS = {
+  'Order manager': 'Approves, dispatches and tracks orders.',
+  'Product manager': 'Adds and approves products, categories and reviews.',
+  'Vendor manager': 'Shops, KYC approval, vendor wallets.',
+  'Customer support': 'Looks up orders and customers, moderates reviews.',
+  Accountant: 'Reports, payouts, refunds and fee settings.',
+  'Marketing manager': 'Banners, coupons, landing pages, announcements, policies.',
+  buyer: 'Given automatically to customers.',
+  vendor: 'Given automatically to sellers.',
+  retailer: 'Given automatically to retail sellers.',
+  wholesaler: 'Given automatically to wholesale sellers.',
+  service_provider: 'Given automatically to service providers.',
+};
+
 function PermissionPicker({ permissions, value, onChange }) {
   const [q, setQ] = useState('');
   const filtered = permissions.filter((p) => `${p.name} ${p.codename}`.toLowerCase().includes(q.toLowerCase()));
@@ -74,7 +93,7 @@ function StaffModal({ staff, roles, onClose, onSaved }) {
         <div>
           <p className="label">Roles</p>
           <div className="flex flex-wrap gap-2">
-            {roles.map((r) => (
+            {roles.filter((r) => !isCustomerRole(r) || form.group_ids.includes(r.id)).map((r) => (
               <button
                 key={r.id}
                 type="button"
@@ -193,8 +212,16 @@ export default function StaffPage() {
           />
         </div>
       ) : (
+        <div className="space-y-6">
+        {[
+          { title: 'Staff roles', note: 'Give these to your team. Each one opens only its part of the admin.', list: roleList.filter((r) => !isCustomerRole(r)) },
+          { title: 'Customer account types', note: 'Set automatically when someone signs up. Their pages are protected by account type.', list: roleList.filter(isCustomerRole) },
+        ].map((group) => (
+        <div key={group.title}>
+          <h2 className="text-sm font-semibold text-slate-900">{group.title}</h2>
+          <p className="mb-3 text-xs text-slate-500">{group.note}</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {roleList.map((r) => (
+          {group.list.map((r) => (
             <div key={r.id} className="card p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -203,16 +230,20 @@ export default function StaffPage() {
                 </div>
                 <div className="flex gap-1">
                   <button className="btn btn-ghost btn-icon h-8 w-8" onClick={() => setModal({ type: 'role', item: r })} title="Edit"><Pencil className="size-4" /></button>
-                  <button className="btn btn-ghost btn-icon h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => setToDelete({ type: 'role', item: r })} title="Delete"><Trash2 className="size-4" /></button>
+                  {!isCustomerRole(r) && <button className="btn btn-ghost btn-icon h-8 w-8 text-red-600 hover:bg-red-50" onClick={() => setToDelete({ type: 'role', item: r })} title="Delete"><Trash2 className="size-4" /></button>}
                 </div>
               </div>
-              <p className="mt-3 text-sm text-slate-500">{r.permission_details.length} permissions</p>
+              {ROLE_HINTS[r.name] && <p className="mt-2 text-sm text-slate-600">{ROLE_HINTS[r.name]}</p>}
+              <p className="mt-2 text-sm text-slate-500">{r.permission_details.length} permissions</p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {r.permission_details.slice(0, 5).map((p) => <Badge key={p.id} className="text-[11px]">{p.codename}</Badge>)}
                 {r.permission_details.length > 5 && <Badge className="text-[11px]">+{r.permission_details.length - 5}</Badge>}
               </div>
             </div>
           ))}
+        </div>
+        </div>
+        ))}
         </div>
       )}
 

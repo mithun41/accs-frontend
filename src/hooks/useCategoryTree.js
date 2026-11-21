@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { catalogApi } from '@/lib/services';
 import { toList } from '@/lib/utils';
+import { findPath } from '@/lib/catalog';
 
 // One request per page load, shared by the header, sidebar and filters
 const EMPTY = [];
@@ -24,6 +25,15 @@ function load() {
   }
 }
 
+/**
+ * Reload the shared tree, e.g. after an admin adds, edits or deletes a category, so the
+ * header menus, home page and filters pick up the change without a full page reload.
+ */
+export function refreshCategoryTree() {
+  pending = null;
+  load();
+}
+
 function subscribe(notify) {
   listeners.add(notify);
   if (cache === EMPTY) load();
@@ -38,12 +48,9 @@ export function useCategoryTree() {
   return useSyncExternalStore(subscribe, () => cache, () => EMPTY);
 }
 
-/** Find a category (class or subject) and its parent in the tree. */
+/** Find a category at any depth, with its top-level `root`, direct `parent` and full `path`. */
 export function findCategory(tree, id) {
-  for (const c of tree) {
-    if (String(c.id) === String(id)) return { category: c, parent: null };
-    const sub = (c.subcategories || []).find((s) => String(s.id) === String(id));
-    if (sub) return { category: sub, parent: c };
-  }
-  return { category: null, parent: null };
+  const path = findPath(tree, id);
+  const category = path[path.length - 1] || null;
+  return { category, parent: path.length > 1 ? path[path.length - 2] : null, root: path[0] || null, path };
 }

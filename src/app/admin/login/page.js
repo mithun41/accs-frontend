@@ -12,6 +12,7 @@ import { Field, PasswordInput, PhoneInput } from '@/components/ui/Field';
 import { Alert } from '@/components/ui/Feedback';
 import Button from '@/components/ui/Button';
 import { Logo } from '@/components/layout/SiteHeader';
+import LoginCodeStep from '@/components/auth/LoginCodeStep';
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -21,13 +22,26 @@ function AdminLoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Super admins: after the password, a code sent by SMS ({ phoneHint } while waiting for it)
+  const [codeStep, setCodeStep] = useState(null);
 
   const submit = async (e) => {
     e.preventDefault();
     setError('');
+    await signIn();
+  };
+
+  // Without `code` the server may answer "otp_required" (super admins); then the code step is shown
+  const signIn = async (code) => {
     setLoading(true);
     try {
-      const res = await authApi.adminLogin(normalizePhone(phone), password);
+      const res = await authApi.adminLogin(normalizePhone(phone), password, code);
+      if (res.status === 'otp_required') {
+        if (codeStep) toast.success('A new code was sent');
+        setCodeStep({ phoneHint: res.data?.phone_hint || phone });
+        setLoading(false);
+        return;
+      }
       await startSession(res.data);
       toast.success('Signed in to admin console');
       router.replace(next && next.startsWith('/admin') ? next : '/admin');
@@ -51,6 +65,17 @@ function AdminLoginForm() {
           <h1 className="text-xl font-semibold text-slate-900">Sign in</h1>
           <p className="mt-1 text-sm text-slate-500">Only ACCS staff accounts can access this area.</p>
           {error && <Alert tone="error" icon={ShieldAlert} className="mt-5">{error}</Alert>}
+          {codeStep ? (
+            <div className="mt-6">
+              <LoginCodeStep
+                phoneHint={codeStep.phoneHint}
+                loading={loading}
+                onSubmit={(code) => { setError(''); signIn(code); }}
+                onResend={() => { setError(''); return signIn(); }}
+                onBack={() => { setCodeStep(null); setError(''); }}
+              />
+            </div>
+          ) : (
           <form onSubmit={submit} className="mt-6 space-y-4">
             <Field label="Mobile number">
               <PhoneInput value={phone} onChange={setPhone} required autoFocus />
@@ -60,6 +85,7 @@ function AdminLoginForm() {
             </Field>
             <Button type="submit" size="lg" className="w-full" loading={loading}>Sign in</Button>
           </form>
+          )}
         </div>
         <p className="mt-6 text-center text-sm text-slate-400">
           <Link href="/" className="hover:text-white">← Back to the store</Link>
